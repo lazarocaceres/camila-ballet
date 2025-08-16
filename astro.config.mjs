@@ -9,4 +9,8 @@ import tinaDirective from './astro-tina-directive/register'
 export default defineConfig({
     site: process.env.SITE_URL || `https://${process.env.VERCEL_URL}`,
     integrations: [mdx(), sitemap(), react(), tinaDirective()],
+    trailingSlash: 'never',
+    prefetch: {
+        prefetchAll: true,
+    },
 })
