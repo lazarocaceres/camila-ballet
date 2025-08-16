@@ -1,11 +1,11 @@
 ---
 import { getCollection } from 'astro:content'
-import client from '../../tina/__generated__/client'
-import Page from '../../tina/pages/Page'
-import Footer from '../components/Footer.astro'
-import Header from '../components/Header.astro'
-import BaseHead from '../components/BaseHead.astro'
-import config from '../content/config/config.json'
+import client from '../../../tina/__generated__/client'
+import Page from '../../../tina/pages/Page'
+import Footer from '../../components/Footer.astro'
+import Header from '../../components/Header.astro'
+import BaseHead from '../../components/BaseHead.astro'
+import config from '../../content/config/config.json'
 
 export async function getStaticPaths() {
     const page = await getCollection('page')

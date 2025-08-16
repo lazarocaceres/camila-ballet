@@ -1,0 +1,20 @@
+---
+import BaseHead from '../components/BaseHead.astro'
+import Header from '../components/Header.astro'
+import Footer from '../components/Footer.astro'
+import config from '../content/config/config.json'
+
+const { locale, title } = Astro.props
+---
+
+<!doctype html>
+<html lang={locale}>
+    <head>
+        <BaseHead title={title ?? config.seo.title} description={config.seo.description} />
+    </head>
+    <body>
+        <Header />
+        <slot />
+        <Footer />
+    </body>
+</html>
