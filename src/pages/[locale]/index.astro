@@ -1,8 +1,8 @@
 ---
-import { i18n } from '../../../i18n'
-import client from '../../../tina/__generated__/client'
-import Layout from '../../layouts/Layout.astro'
-import HomePage from '../../../tina/pages/HomePage'
+import { i18n } from 'i18n'
+import client from 'tina/__generated__/client'
+import Layout from 'layouts/Layout.astro'
+import HomePage from 'tina/pages/HomePage'
 
 export async function getStaticPaths() {
     const locales = i18n.locales.filter(locale => locale !== i18n.defaultLocale)

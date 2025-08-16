@@ -13,15 +13,14 @@ export async function getStaticPaths() {
         const entry = p.id.replace(/^\/|\/$/g, '')
         const [locale, ...segments] = entry.split('/')
 
-        if (!i18n.locales.includes(locale)) continue
-        if (locale === i18n.defaultLocale) continue
+        if (locale !== i18n.defaultLocale) continue
         if (segments.length === 0) continue
 
         if (segments.length === 1 && segments[0] === 'home') continue
         const slugParam = segments.length === 1 ? segments[0] : segments
 
         routes.push({
-            params: { locale, slug: slugParam },
+            params: { slug: slugParam },
             props: {
                 getTinaProps: async () =>
                     client.queries.page({
@@ -34,7 +33,7 @@ export async function getStaticPaths() {
     return routes
 }
 
-const { locale } = Astro.params
+const locale = i18n.defaultLocale
 const { getTinaProps } = Astro.props
 const data = await getTinaProps()
 ---
