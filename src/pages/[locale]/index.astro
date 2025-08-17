@@ -2,7 +2,7 @@
 import { i18n } from 'i18n'
 import client from 'tina/__generated__/client'
 import Layout from 'layouts/Layout.astro'
-import HomePage from 'tina/pages/HomePage'
+import Page from 'tina/pages/Page'
 
 export async function getStaticPaths() {
     const locales = i18n.locales.filter(locale => locale !== i18n.defaultLocale)
@@ -19,5 +19,5 @@ const data = await client.queries.page({ relativePath: `${locale}/home.mdx` })
 ---
 
 <Layout locale={locale} title={data.data.page.seoTitle}>
-    <HomePage {...data} client:tina />
+    <Page {...data} client:tina />
 </Layout>

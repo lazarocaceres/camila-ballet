@@ -1,5 +1,5 @@
 import { defineCollection, z } from 'astro:content'
-import client from '../tina/__generated__/client'
+import client from 'tina/__generated__/client'
 
 const page = defineCollection({
     loader: async () => {
@@ -29,4 +29,5 @@ const page = defineCollection({
         body: z.any(),
     }),
 })
+
 export const collections = { page }

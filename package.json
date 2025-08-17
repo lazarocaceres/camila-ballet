@@ -16,10 +16,13 @@
         "@astrojs/rss": "4.0.12",
         "@astrojs/sitemap": "3.5.0",
         "@tanstack/react-virtual": "3.13.12",
+        "aos": "^2.3.4",
         "astro": "5.13.2",
+        "mermaid": "^11.9.0",
         "react": "19.1.1",
         "react-dom": "19.1.1",
         "react-icons": "5.5.0",
+        "react-lite-yt-embed": "^1.2.7",
         "tinacms": "2.8.2"
     },
     "devDependencies": {

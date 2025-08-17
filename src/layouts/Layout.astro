@@ -3,12 +3,13 @@ import BaseHead from 'components/BaseHead.astro'
 import Header from 'components/Header.astro'
 import Footer from 'components/Footer.astro'
 import config from 'content/config/config.json'
+import 'aos/dist/aos.css'
 
 const { locale, title } = Astro.props
 ---
 
 <!doctype html>
-<html lang={locale}>
+<html lang={locale} transition:animate='none'>
     <head>
         <BaseHead title={title ?? config.seo.title} description={config.seo.description} />
     </head>
@@ -16,5 +17,7 @@ const { locale, title } = Astro.props
         <Header />
         <slot />
         <Footer />
+
+        <script is:inline src='../scripts/aos.js' type='module'></script>
     </body>
 </html>
