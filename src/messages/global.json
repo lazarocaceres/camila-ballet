@@ -1,0 +1,14 @@
+{
+    "es": {
+        "openMenu": "Abrir menú",
+        "closeMenu": "Cerrar menú"
+    },
+    "en": {
+        "openMenu": "Open menu",
+        "closeMenu": "Close menu"
+    },
+    "fr": {
+        "openMenu": "Ouvrir le menu",
+        "closeMenu": "Fermer le menu"
+    }
+}

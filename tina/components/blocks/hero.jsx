@@ -11,6 +11,7 @@ export default function Hero({ data }) {
                 <div className='flex flex-col lg:flex-row gap-10 lg:gap-12 justify-between'>
                     <h1
                         data-aos='fade-right'
+                        data-aos-once='true'
                         className='font-playfair-display text-6xl lg:text-8xl max-w-[12ch]'
                         data-tina-field={tinaField(data, 'title')}
                     >
@@ -18,6 +19,7 @@ export default function Hero({ data }) {
                     </h1>
                     <div
                         data-aos='fade-left'
+                        data-aos-once='true'
                         className='lg:pt-4 space-y-8 max-w-2xl'
                     >
                         <p data-tina-field={tinaField(data, 'description')}>
@@ -49,6 +51,7 @@ export default function Hero({ data }) {
                 </div>
                 <div
                     data-aos='fade-up'
+                    data-aos-once='true'
                     className='relative w-full aspect-[3/2]'
                 >
                     <img

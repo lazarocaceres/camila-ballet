@@ -1,10 +1,18 @@
 import { tinaField } from 'tinacms/dist/react'
 
-export default function InfoCard({ icon, alt, title, tina = '', children }) {
+export default function InfoCard({
+    icon,
+    alt,
+    title,
+    tina = '',
+    children,
+    ...props
+}) {
     return (
         <div
             className='text-center space-y-7'
             data-tina-field={tinaField(tina)}
+            {...props}
         >
             <img
                 src={icon}

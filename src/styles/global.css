@@ -1,175 +1,103 @@
-/*
-  The CSS in this style tag is based off of Bear Blog's default CSS.
-  https://github.com/HermanMartinus/bearblog/blob/297026a877bc2ab2b3bdfbd6b9f7961c350917dd/templates/styles/blog/default.css
-  License MIT: https://github.com/HermanMartinus/bearblog/blob/master/LICENSE.md
- */
+@import 'tailwindcss';
+@plugin "@tailwindcss/typography";
 
 :root {
-    --accent: #2337ff;
-    --accent-dark: #000d8a;
-    --black: 15, 18, 25;
-    --gray: 96, 115, 159;
-    --gray-light: 229, 233, 240;
-    --gray-dark: 34, 41, 57;
-    --gray-gradient: rgba(var(--gray-light), 50%), #fff;
-    --box-shadow:
-        0 2px 6px rgba(var(--gray), 25%), 0 8px 24px rgba(var(--gray), 33%),
-        0 16px 32px rgba(var(--gray), 33%);
+    --background: #fff0f2;
+    --secondary-background: #66484d;
+    --primary: #ffb6c1;
 }
-@font-face {
-    font-family: 'Atkinson';
-    src: url('/fonts/atkinson-regular.woff') format('woff');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
+
+@theme inline {
+    --color-background: var(--background);
+    --color-secondary-background: var(--secondary-background);
+    --color-primary: var(--primary);
+
+    --font-playfair-display: var(--playfair-display);
 }
-@font-face {
-    font-family: 'Atkinson';
-    src: url('/fonts/atkinson-bold.woff') format('woff');
-    font-weight: 700;
-    font-style: normal;
-    font-display: swap;
+
+@utility container {
+    margin-inline: auto;
+    padding-inline: 2rem;
 }
+
+@utility text-4.5xl {
+    font-size: 2.5rem;
+    line-height: 1.1;
+}
+
+@utility text-md {
+    font-size: 0.9rem;
+    line-height: 1.4286;
+}
+
+.__tina-quick-editing-enabled [data-tina-field] {
+    outline: 2px dashed #e77d8f;
+}
+
+.__tina-quick-editing-enabled [data-tina-field]:hover {
+    outline: 2px dashed #e47688;
+    box-shadow: inset 100vi 100vh #f1899a50;
+}
+
+::-moz-selection {
+    background: #ff7f926b;
+    color: #000000;
+}
+
+::selection {
+    background: #ff7f926b;
+    color: #000000;
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #00000007;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #0000003a;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #00000059;
+}
+
 body {
-    font-family: 'Atkinson', sans-serif;
-    margin: 0;
-    padding: 0;
-    text-align: left;
-    background: linear-gradient(var(--gray-gradient)) no-repeat;
-    background-size: 100% 600px;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    color: rgb(var(--gray-dark));
-    font-size: 20px;
-    line-height: 1.7;
-}
-main {
-    width: 720px;
-    max-width: calc(100% - 2em);
-    margin: auto;
-    padding: 3em 1em;
-}
-article {
-    width: 720px;
-    max-width: calc(100% - 2em);
-    margin: auto;
-    padding: 3em 1em;
-}
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-    margin: 0 0 0.5rem 0;
-    color: rgb(var(--black));
-    line-height: 1.2;
-}
-h1 {
-    font-size: 3.052em;
-}
-h2 {
-    font-size: 2.441em;
-}
-h3 {
-    font-size: 1.953em;
-}
-h4 {
-    font-size: 1.563em;
-}
-h5 {
-    font-size: 1.25em;
-}
-strong,
-b {
-    font-weight: 700;
-}
-a {
-    color: var(--accent);
-}
-a:hover {
-    color: var(--accent);
-}
-p {
-    margin-bottom: 1em;
-}
-.prose p {
-    margin-bottom: 2em;
-}
-textarea {
-    width: 100%;
-    font-size: 16px;
-}
-input {
-    font-size: 16px;
-}
-table {
-    width: 100%;
-}
-img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 8px;
-}
-code {
-    padding: 2px 5px;
-    background-color: rgb(var(--gray-light));
-    border-radius: 2px;
-}
-pre {
-    padding: 1.5em;
-    border-radius: 8px;
-}
-pre > code {
-    all: unset;
-}
-blockquote {
-    border-left: 4px solid var(--accent);
-    padding: 0 0 0 20px;
-    margin: 0px;
-    font-size: 1.333em;
-}
-hr {
-    border: none;
-    border-top: 1px solid rgb(var(--gray-light));
-}
-@media (max-width: 720px) {
-    body {
-        font-size: 18px;
-    }
-    main {
-        padding: 1em;
-    }
+    font-family: var(--inter);
+    font-weight: 500;
+    scrollbar-width: thin;
+    scrollbar-color: #0000003a #00000007;
+    scrollbar-gutter: stable both-edges;
 }
 
-.sr-only {
-    border: 0;
-    padding: 0;
-    margin: 0;
-    position: absolute !important;
+@utility primary-button {
+    @apply px-4 py-2 bg-primary rounded-2xl cursor-pointer transition-colors duration-300 hover:bg-primary/80;
+}
+
+@utility secondary-button {
+    @apply px-4 py-2 bg-neutral-400/10 rounded-2xl cursor-pointer transition-colors duration-300 hover:bg-neutral-400/15;
+}
+
+@utility underline-hover {
+    position: relative;
+}
+
+.underline-hover::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 0;
     height: 1px;
-    width: 1px;
-    overflow: hidden;
-    /* IE6, IE7 - a 0 height clip, off to the bottom right of the visible 1px box */
-    clip: rect(1px 1px 1px 1px);
-    /* maybe deprecated but we need to support legacy browsers */
-    clip: rect(1px, 1px, 1px, 1px);
-    /* modern browsers, clip-path works inwards from each corner */
-    clip-path: inset(50%);
-    /* added line to stop words getting smushed together (as they go onto separate lines and some screen readers do not understand line feeds as a space */
-    white-space: nowrap;
+    background: #000000;
+    transition: all 0.3s ease-in-out;
 }
 
-.social-links {
-    display: flex;
-    justify-content: center;
-    gap: 1em;
-    margin-top: 1em;
-}
-.social-links a {
-    text-decoration: none;
-    color: rgb(var(--gray));
-}
-.social-links a:hover {
-    color: rgb(var(--gray-dark));
+.underline-hover:hover::after {
+    width: 100%;
 }

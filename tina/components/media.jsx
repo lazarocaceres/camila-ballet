@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { tinaField } from 'tinacms/dist/react'
-import { LiteYoutubeEmbed } from 'react-lite-yt-embed'
 import SmartLink from './smart-link'
 
 const resolutionCache = new Map()
@@ -79,14 +78,12 @@ export default function Media({
                         className='w-full object-cover'
                     />
                 ) : (
-                    <LiteYoutubeEmbed
+                    <lite-youtube
                         key={`${videoId}-${resolution}`}
-                        id={videoId}
-                        mute={false}
-                        desktopResolution={resolution}
-                        imageAltText={title}
-                        iframeTitle={title}
-                        lazyImage={true}
+                        videoId={videoId}
+                        videotitle={title}
+                        posterquality={resolution}
+                        nocookie
                     />
                 )}
             </div>

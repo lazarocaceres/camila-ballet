@@ -1,23 +1,27 @@
 ---
+import client from 'tina/__generated__/client'
 import BaseHead from 'components/BaseHead.astro'
-import Header from 'components/Header.astro'
-import Footer from 'components/Footer.astro'
-import config from 'content/config/config.json'
+import Header from 'components/react/Header'
+import Footer from 'components/react/Footer'
+import 'lite-youtube-embed/src/lite-yt-embed.css'
 import 'aos/dist/aos.css'
+import '../styles/global.css'
 
-const { locale, title } = Astro.props
+const { locale, title, description } = Astro.props
+const globalData = await client.queries.global({ relativePath: `${locale}/global.md` })
 ---
 
 <!doctype html>
 <html lang={locale} transition:animate='none'>
     <head>
-        <BaseHead title={title ?? config.seo.title} description={config.seo.description} />
+        <BaseHead title={title ?? globalData.data.global.genericTitle} description={description ?? globalData.data.global.genericDescription} />
     </head>
     <body>
-        <Header />
+        <Header lang={locale} globalData={globalData} />
         <slot />
-        <Footer />
+        <Footer globalData={globalData} />
 
-        <script is:inline src='../scripts/aos.js' type='module'></script>
+        <script src='../scripts/aos.js'></script>
+        <script src='node_modules/lite-youtube-embed/src/lite-yt-embed.js'></script>
     </body>
 </html>

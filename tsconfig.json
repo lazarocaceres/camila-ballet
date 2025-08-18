@@ -9,6 +9,7 @@
             "layouts/*": ["src/layouts/*"],
             "components/*": ["src/components/*"],
             "content/*": ["src/content/*"],
+            "messages/*": ["src/messages/*"],
             "assets/*": ["src/assets/*"],
             "icons/*": ["src/icons/*"]
         },

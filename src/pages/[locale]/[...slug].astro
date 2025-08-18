@@ -39,6 +39,6 @@ const { getTinaProps } = Astro.props
 const data = await getTinaProps()
 ---
 
-<Layout locale={locale} title={data.data.page.seoTitle}>
+<Layout locale={locale} title={data.data.page.title} description={data.data.page.description}>
     <Page {...data} client:tina />
 </Layout>

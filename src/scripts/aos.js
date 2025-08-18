@@ -2,9 +2,11 @@ import AOS from 'aos'
 
 function initAOS() {
     AOS.init({
-        duration: 600,
-        once: false,
-        offset: 120,
+        disable: 'mobile',
+        offset: 20,
+        duration: 700,
+        delay: 0,
+        easing: 'ease-in-out-sine',
     })
 }
 

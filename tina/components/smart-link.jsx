@@ -2,32 +2,32 @@ import { isEmail } from 'lib/utils'
 import SectionLink from './section-link'
 
 export default function SmartLink({ href = '/', children, ...props }) {
-    const sectionMatch = href.match(/^\/?#(.+)/)
-    if (sectionMatch) {
+    const rawHref = String(href ?? '/')
+
+    const isPureHash = rawHref.startsWith('#') || rawHref.startsWith('/#')
+    if (isPureHash) {
+        const section = rawHref.replace(/^\/?#/, '')
         return (
-            <SectionLink section={sectionMatch[1]} {...props}>
+            <SectionLink section={section} {...props}>
                 {children}
             </SectionLink>
         )
     }
 
-    if (!href.startsWith('/')) {
-        return (
-            <a href={href} target='_blank' rel='noopener noreferrer' {...props}>
-                {children}
-            </a>
-        )
+    let finalHref = rawHref
+    if (isEmail(rawHref) && !rawHref.startsWith('mailto:')) {
+        finalHref = `mailto:${rawHref}`
     }
+
+    const isExternal =
+        !finalHref.startsWith('/') && !finalHref.startsWith('mailto:')
 
     return (
         <a
-            href={
-                isEmail(href)
-                    ? `mailto:${href}`
-                    : typeof href === 'string'
-                      ? href
-                      : '/'
-            }
+            href={finalHref}
+            {...(isExternal
+                ? { target: '_blank', rel: 'noopener noreferrer' }
+                : {})}
             {...props}
         >
             {children}

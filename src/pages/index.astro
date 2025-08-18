@@ -5,9 +5,9 @@ import Layout from 'layouts/Layout.astro'
 import Page from 'tina/pages/Page'
 
 const locale = i18n.defaultLocale
-const data = await client.queries.page({ relativePath: `${locale}/home.mdx` })
+const data = await client.queries.page({ relativePath: `${locale}/home.md` })
 ---
 
-<Layout locale={locale} title={data.data.page.seoTitle}>
+<Layout locale={locale} title={data.data.page.title} description={data.data.page.description}>
     <Page {...data} client:tina />
 </Layout>
