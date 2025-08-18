@@ -3,7 +3,7 @@ import { useTina, tinaField } from 'tinacms/dist/react'
 import messages from 'messages/global.json'
 import SmartLink from 'tina/components/smart-link'
 
-export default function Header(lang, globalData) {
+export default function Header({ lang, globalData }) {
     const generic = messages[lang]
     const {
         data: { global },

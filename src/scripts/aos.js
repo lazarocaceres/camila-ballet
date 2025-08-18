@@ -4,7 +4,7 @@ function initAOS() {
     AOS.init({
         disable: 'mobile',
         offset: 20,
-        duration: 700,
+        duration: 800,
         delay: 0,
         easing: 'ease-in-out-sine',
     })

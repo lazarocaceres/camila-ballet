@@ -11,7 +11,7 @@ blocks:
       name: Ver más
       url: '#about'
     secondaryCta:
-      name: Contacto
+      name: Repertorio
       url: '#contact'
     image:
       src: /camila.jpg
@@ -47,7 +47,7 @@ blocks:
       name: Explorar
       url: '#presentations'
     secondaryCta:
-      name: Contacto
+      name: Repertorio
       url: '#contact'
     id: about
     _template: career
@@ -87,8 +87,8 @@ blocks:
     _template: presentations
   - title: Experimenta la Magia de la Danza
     description: >-
-      Déjate llevar por la magia del ballet: sutileza y potencia en cada paso.
-      Contáctame para conocer mi propuesta artística.
+      Déjate llevar por la magia del ballet: sutileza y potencia en cada paso,
+      armonía y expresión en cada movimiento.
     image:
       src: /camila-1.jpg
       alt: Camila Rodríguez bailarina de ballet
@@ -96,13 +96,11 @@ blocks:
       name: Presentaciones
       url: '#presentations'
     secondaryCta:
-      name: Contacto
-      url: '#contact'
-    ctaTitle: Contacta conmigo
-    ctaDescription: 'Para proyectos, colaboraciones o consultas.'
+      name: Ver más
+      url: 'https://www.instagram.com/camilarodriguez_ballet/'
+    ctaTitle: Repertorio completo
+    ctaDescription: Vive conmigo mis próximas presentaciones.
     elements:
-      - method: 'Email:'
-        url: camirod20708@gmail.com
       - method: 'Instagram:'
         label: '@camilarodriguez_ballet'
         url: 'https://www.instagram.com/camilarodriguez_ballet/'

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { tinaField } from 'tinacms/dist/react'
 import SmartLink from './smart-link'
+import 'lite-youtube-embed/src/lite-yt-embed.css'
 
 const resolutionCache = new Map()
 

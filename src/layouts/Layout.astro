@@ -3,9 +3,6 @@ import client from 'tina/__generated__/client'
 import BaseHead from 'components/BaseHead.astro'
 import Header from 'components/react/Header'
 import Footer from 'components/react/Footer'
-import 'lite-youtube-embed/src/lite-yt-embed.css'
-import 'aos/dist/aos.css'
-import '../styles/global.css'
 
 const { locale, title, description } = Astro.props
 const globalData = await client.queries.global({ relativePath: `${locale}/global.md` })

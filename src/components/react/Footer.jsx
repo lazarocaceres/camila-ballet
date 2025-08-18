@@ -1,6 +1,6 @@
 import { useTina, tinaField } from 'tinacms/dist/react'
 
-export default function Footer(globalData) {
+export default function Footer({ globalData }) {
     const {
         data: { global },
     } = useTina(globalData)

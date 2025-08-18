@@ -3,7 +3,7 @@ import { extractLanguageAndPath } from 'lib/utils'
 export const GlobalCollection = {
     label: 'Global',
     name: 'global',
-    path: 'content/global',
+    path: 'src/content/global',
     ui: {
         global: true,
         allowedActions: {
