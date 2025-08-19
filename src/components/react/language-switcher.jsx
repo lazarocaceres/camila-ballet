@@ -1,0 +1,85 @@
+import { useState, useRef, useEffect } from 'react'
+import { i18n } from 'i18n'
+import ChevronDown from 'icons/chevron-down'
+import Check from 'icons/check'
+
+const localeConfig = {
+    en: { label: 'English', flagCode: 'gb' },
+    es: { label: 'Español', flagCode: 'es' },
+    fr: { label: 'Français', flagCode: 'fr' },
+}
+
+export default function LanguageSwitcher({ locale, pathname: path }) {
+    const pathname = path === '/' ? '' : path
+
+    const languages = i18n.locales.map(code => ({
+        code,
+        label: (localeConfig[code] && localeConfig[code].label) || code,
+        flagCode: (localeConfig[code] && localeConfig[code].flagCode) || code,
+    }))
+
+    const active = languages.find(l => l.code === locale) || languages[0]
+
+    const [open, setOpen] = useState(false)
+    const ref = useRef(null)
+
+    useEffect(() => {
+        function onClickOutside(e) {
+            if (ref.current && !ref.current.contains(e.target)) {
+                setOpen(false)
+            }
+        }
+        document.addEventListener('mousedown', onClickOutside)
+        return () => document.removeEventListener('mousedown', onClickOutside)
+    }, [])
+
+    return (
+        <div
+            ref={ref}
+            className='fixed bottom-5 right-5 z-50 inline-block text-left'
+        >
+            <button
+                type='button'
+                onClick={() => setOpen(o => !o)}
+                className={`flex items-center space-x-1.5 ${open ? 'bg-neutral-100' : 'bg-white'} border border-neutral-200 shadow-sm rounded-full px-3 py-2 transition-all ease-in hover:bg-neutral-100 focus:outline-none cursor-pointer`}
+            >
+                <img
+                    src={`https://flagsapi.com/${active.flagCode.toUpperCase()}/flat/32.png`}
+                    alt={active.label}
+                    loading='lazy'
+                    className='w-6 h-6 object-cover rounded-sm'
+                />
+                <ChevronDown open={open} />
+            </button>
+
+            <div
+                className={`absolute right-0 bottom-full mb-2 w-44 bg-white border border-neutral-200 rounded-lg shadow-lg overflow-hidden transform-gpu transition-all duration-300 ease-in-out origin-bottom ${
+                    open
+                        ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto'
+                        : 'opacity-0 translate-y-0.5 scale-95 pointer-events-none'
+                }`}
+            >
+                {languages.map(lang => {
+                    console.log(lang.code === i18n.defaultLocale)
+                    return (
+                        <a
+                            key={lang.code}
+                            href={`${lang.code === i18n.defaultLocale ? '' : `/${lang.code}`}${pathname}`}
+                            onClick={() => setOpen(false)}
+                            className='w-full flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 focus:outline-none'
+                        >
+                            <img
+                                src={`https://flagsapi.com/${lang.flagCode.toUpperCase()}/flat/32.png`}
+                                alt=''
+                                loading='lazy'
+                                className='w-6 h-6 object-cover rounded-sm'
+                            />
+                            <span className='flex-1'>{lang.label}</span>
+                            {lang.code === active.code && <Check />}
+                        </a>
+                    )
+                })}
+            </div>
+        </div>
+    )
+}

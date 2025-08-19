@@ -3,8 +3,10 @@ import client from 'tina/__generated__/client'
 import BaseHead from 'components/BaseHead.astro'
 import Header from 'components/react/header'
 import Footer from 'components/react/footer'
+import LanguageSwitcher from 'components/react/language-switcher'
 
 const { locale, title, description } = Astro.props
+const pathname = Astro.url.pathname.replace(`/${locale}`, '') || '/'
 const globalData = await client.queries.global({ relativePath: `${locale}/global.md` })
 ---
 
@@ -14,10 +16,12 @@ const globalData = await client.queries.global({ relativePath: `${locale}/global
         <BaseHead locale={locale} title={title ?? globalData.data.global.genericTitle} description={description ?? globalData.data.global.genericDescription} />
     </head>
     <body class='flex flex-col min-h-screen'>
-        <Header lang={locale} globalData={globalData} client:tina />
+        <Header lang={locale} globalData={globalData} client:load />
         <main class='flex-grow'>
             <slot />
         </main>
         <Footer globalData={globalData} client:tina />
+
+        <LanguageSwitcher locale={locale} pathname={pathname} client:load />
     </body>
 </html>
