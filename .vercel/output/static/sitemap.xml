@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>http://localhost:3000</loc>
+    <lastmod>2025-08-19T06:54:50.487Z</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="http://localhost:3000" />
+    <xhtml:link rel="alternate" hreflang="en" href="http://localhost:3000/en" />
+    <xhtml:link rel="alternate" hreflang="fr" href="http://localhost:3000/fr" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="http://localhost:3000" />
+  </url>
+  <url>
+    <loc>http://localhost:3000/en</loc>
+    <lastmod>2025-08-19T06:54:48.652Z</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="http://localhost:3000" />
+    <xhtml:link rel="alternate" hreflang="en" href="http://localhost:3000/en" />
+    <xhtml:link rel="alternate" hreflang="fr" href="http://localhost:3000/fr" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="http://localhost:3000" />
+  </url>
+  <url>
+    <loc>http://localhost:3000/fr</loc>
+    <lastmod>2025-08-19T06:54:49.080Z</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="http://localhost:3000" />
+    <xhtml:link rel="alternate" hreflang="en" href="http://localhost:3000/en" />
+    <xhtml:link rel="alternate" hreflang="fr" href="http://localhost:3000/fr" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="http://localhost:3000" />
+  </url>
+  <url>
+    <loc>http://localhost:3000/testeo</loc>
+    <lastmod>2025-08-19T06:54:50.955Z</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="http://localhost:3000/testeo" />
+    <xhtml:link rel="alternate" hreflang="en" href="http://localhost:3000/en/testeo" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="http://localhost:3000/testeo" />
+  </url>
+  <url>
+    <loc>http://localhost:3000/en/testeo</loc>
+    <lastmod>2025-08-19T06:54:50.082Z</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="http://localhost:3000/testeo" />
+    <xhtml:link rel="alternate" hreflang="en" href="http://localhost:3000/en/testeo" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="http://localhost:3000/testeo" />
+  </url>
+</urlset>

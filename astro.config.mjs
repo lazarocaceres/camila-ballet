@@ -1,7 +1,7 @@
 // @ts-check
 import { loadEnv } from 'vite'
 import { defineConfig, fontProviders } from 'astro/config'
-import vercel from '@astrojs/vercel/static'
+import vercel from '@astrojs/vercel'
 import { i18n } from './i18n'
 import mdx from '@astrojs/mdx'
 import sitemap from './lib/sitemap'
