@@ -79,6 +79,7 @@ export default function Media({
                         src={image}
                         alt={alt}
                         loading='lazy'
+                        decoding='async'
                         className='w-full object-cover'
                     />
                 ) : (

@@ -58,6 +58,7 @@ export default function Hero({ data }) {
                         src={data.image?.src}
                         alt={data.image?.alt}
                         loading='lazy'
+                        decoding='async'
                         className='w-full rounded-2xl'
                         data-tina-field={tinaField(data, 'image')}
                     />

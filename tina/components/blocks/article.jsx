@@ -22,6 +22,15 @@ export default function Article({ data }) {
                                 </SmartLink>
                             )
                         },
+                        img: ({ url, src, alt, ...rest }) => (
+                            <img
+                                {...rest}
+                                src={src || url}
+                                alt={alt ?? ''}
+                                loading='lazy'
+                                decoding='async'
+                            />
+                        ),
                         code_block: ({ value, lang, ...props }) => {
                             if (lang === 'mermaid') {
                                 return <MermaidElement value={value.trim()} />

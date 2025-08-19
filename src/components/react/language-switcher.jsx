@@ -33,6 +33,14 @@ export default function LanguageSwitcher({ locale, pathname: path }) {
         return () => document.removeEventListener('mousedown', onClickOutside)
     }, [])
 
+    const buildHref = code => {
+        const isDefault = code === i18n.defaultLocale
+        if (isDefault) {
+            return pathname ? pathname : '/'
+        }
+        return `/${code}${pathname || ''}`
+    }
+
     return (
         <div
             ref={ref}
@@ -44,9 +52,10 @@ export default function LanguageSwitcher({ locale, pathname: path }) {
                 className={`flex items-center space-x-1.5 ${open ? 'bg-neutral-100' : 'bg-white'} border border-neutral-200 shadow-sm rounded-full px-3 py-2 transition-all ease-in hover:bg-neutral-100 focus:outline-none cursor-pointer`}
             >
                 <img
-                    src={`https://flagsapi.com/${active.flagCode.toUpperCase()}/flat/32.png`}
+                    src={`/${active.flagCode}.png`}
                     alt={active.label}
                     loading='lazy'
+                    decoding='async'
                     className='w-6 h-6 object-cover rounded-sm'
                 />
                 <ChevronDown open={open} />
@@ -62,14 +71,15 @@ export default function LanguageSwitcher({ locale, pathname: path }) {
                 {languages.map(lang => (
                     <a
                         key={lang.code}
-                        href={`${lang.code === i18n.defaultLocale ? '' : `/${lang.code}`}${pathname}`}
+                        href={buildHref(lang.code)}
                         onClick={() => setOpen(false)}
                         className='w-full flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 focus:outline-none'
                     >
                         <img
-                            src={`https://flagsapi.com/${lang.flagCode.toUpperCase()}/flat/32.png`}
+                            src={`/${lang.flagCode}.png`}
                             alt=''
                             loading='lazy'
+                            decoding='async'
                             className='w-6 h-6 object-cover rounded-sm'
                         />
                         <span className='flex-1'>{lang.label}</span>
