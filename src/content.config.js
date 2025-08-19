@@ -97,6 +97,7 @@ const page = defineCollection({
                     __typename: z.string(),
                 }),
             )
+            .nullable()
             .optional(),
 
         body: z.any().optional(),

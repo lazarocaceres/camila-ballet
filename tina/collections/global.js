@@ -1,4 +1,5 @@
 import { extractLanguageAndPath } from 'lib/utils'
+import { i18n } from 'i18n'
 
 export const GlobalCollection = {
     label: 'Global',
@@ -13,7 +14,7 @@ export const GlobalCollection = {
         },
         router: ({ document }) => {
             const { lang } = extractLanguageAndPath(document._sys.relativePath)
-            return `/${lang}`
+            return lang === i18n.defaultLocale ? '/' : `/${lang}`
         },
     },
     fields: [

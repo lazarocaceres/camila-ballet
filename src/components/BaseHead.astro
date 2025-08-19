@@ -3,46 +3,58 @@ import 'aos/dist/aos.css'
 import '../styles/global.css'
 import { Font } from 'astro:assets'
 import { ClientRouter } from 'astro:transitions'
+import { i18n } from 'i18n'
+import { buildHeadMeta } from 'lib/head-meta'
 
-interface Props {
-    title: string
-    description: string
-    image?: string
-}
+const { locale, title, description, image = '/camila.jpg' } = Astro.props
+const currentLocale = locale ?? i18n.defaultLocale
 
-const canonicalURL = new URL(Astro.url.pathname, Astro.site)
-const { title, description, image = '/camila.jpg' } = Astro.props
+const { origin, pathname } = Astro.url
+const { canonicalURL, absoluteImage, alternates, xDefaultUrl } = await buildHeadMeta({ origin, pathname, image, currentLocale, i18n })
+
+type Alternate = { lang: string; url: string }
 ---
 
-<!-- Global Metadata -->
 <meta charset='utf-8' />
-<meta name='viewport' content='width=device-width,initial-scale=1' />
-<link rel='icon' type='image/svg+xml' href='/favicon.svg' />
+<meta name='viewport' content='width=device-width, initial-scale=1' />
 
-<!-- Font preloads -->
+<link rel='icon' type='image/svg+xml' href='/favicon.svg' />
+<link rel='apple-touch-icon' href='/apple-icon.png' />
+<link rel='manifest' href={`/site-${currentLocale}.webmanifest`} />
+<link rel='sitemap' type='application/xml' href='/sitemap.xml' />
+
 <Font cssVariable='--playfair-display' preload />
 <Font cssVariable='--inter' preload />
 
-<!-- Canonical URL -->
 <link rel='canonical' href={canonicalURL} />
 
-<!-- Primary Meta Tags -->
 <title>{title}</title>
-<meta name='title' content={title} />
 <meta name='description' content={description} />
+<meta name='robots' content='index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1' />
+<meta name='theme-color' content='#ffb6c1' />
+<meta name='format-detection' content='telephone=no' />
+<meta name='color-scheme' content='light' />
 
-<!-- Open Graph / Facebook -->
 <meta property='og:type' content='website' />
-<meta property='og:url' content={Astro.url} />
+<meta property='og:site_name' content='Camila Rodríguez' />
+<meta property='og:locale' content={currentLocale} />
+{alternates.filter((a: Alternate) => a.lang !== currentLocale).map((a: Alternate) => <meta property='og:locale:alternate' content={a.lang} />)}
+<meta property='og:url' content={canonicalURL} />
 <meta property='og:title' content={title} />
 <meta property='og:description' content={description} />
-<meta property='og:image' content={new URL(image, Astro.url)} />
+<meta property='og:image' content={absoluteImage} />
+<meta property='og:image:alt' content={description} />
+<meta property='og:image:secure_url' content={absoluteImage} />
 
-<!-- Twitter -->
-<meta property='twitter:card' content='summary_large_image' />
-<meta property='twitter:url' content={Astro.url} />
-<meta property='twitter:title' content={title} />
-<meta property='twitter:description' content={description} />
-<meta property='twitter:image' content={new URL(image, Astro.url)} />
+<meta name='twitter:card' content='summary_large_image' />
+<meta name='twitter:url' content={canonicalURL} />
+<meta name='twitter:title' content={title} />
+<meta name='twitter:description' content={description} />
+<meta name='twitter:image' content={absoluteImage} />
+<meta name='twitter:image:alt' content={description} />
+
+{alternates.filter((a: Alternate) => a.lang !== currentLocale).map((a: Alternate) => <link rel='alternate' hreflang={a.lang} href={a.url} />)}
+<link rel='alternate' hreflang={currentLocale} href={alternates.find((a: Alternate) => a.lang === currentLocale)?.url ?? canonicalURL} />
+<link rel='alternate' hreflang='x-default' href={xDefaultUrl} />
 
 <ClientRouter />

@@ -47,6 +47,7 @@ export default function Cta({ data }) {
                             <img
                                 src={data.image?.src}
                                 alt={data.image?.alt}
+                                loading='lazy'
                                 className='w-full h-full object-cover'
                                 data-tina-field={tinaField(data, 'image')}
                             />

@@ -17,6 +17,7 @@ export default function Footer({ globalData }) {
                         <img
                             src={footer.logo}
                             alt={global.genericAlt}
+                            loading='lazy'
                             className='w-full max-w-[120px]'
                             data-tina-field={tinaField(footer, 'logo')}
                         />

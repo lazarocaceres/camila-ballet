@@ -9,5 +9,5 @@ const data = await client.queries.page({ relativePath: `${locale}/home.md` })
 ---
 
 <Layout locale={locale} title={data.data.page.title} description={data.data.page.description}>
-    <Page {...data} client:tina />
+    <Page {...data} client:visible />
 </Layout>

@@ -1,24 +1,23 @@
 ---
 import client from 'tina/__generated__/client'
 import BaseHead from 'components/BaseHead.astro'
-import Header from 'components/react/Header'
-import Footer from 'components/react/Footer'
+import Header from 'components/react/header'
+import Footer from 'components/react/footer'
 
 const { locale, title, description } = Astro.props
 const globalData = await client.queries.global({ relativePath: `${locale}/global.md` })
 ---
 
 <!doctype html>
-<html lang={locale} transition:animate='none'>
+<html lang={locale}>
     <head>
-        <BaseHead title={title ?? globalData.data.global.genericTitle} description={description ?? globalData.data.global.genericDescription} />
+        <BaseHead locale={locale} title={title ?? globalData.data.global.genericTitle} description={description ?? globalData.data.global.genericDescription} />
     </head>
-    <body>
-        <Header lang={locale} globalData={globalData} />
-        <slot />
-        <Footer globalData={globalData} />
-
-        <script src='../scripts/aos.js'></script>
-        <script src='node_modules/lite-youtube-embed/src/lite-yt-embed.js'></script>
+    <body class='flex flex-col min-h-screen'>
+        <Header lang={locale} globalData={globalData} client:tina />
+        <main class='flex-grow'>
+            <slot />
+        </main>
+        <Footer globalData={globalData} client:tina />
     </body>
 </html>

@@ -1,3 +1,4 @@
+import { i18n } from 'i18n'
 import { extractLanguageAndPath, slugify, removeFileExtension } from 'lib/utils'
 import { heroBlockSchema } from 'tina/components/blocks/hero'
 import { careerBlockSchema } from 'tina/components/blocks/career'
@@ -20,12 +21,12 @@ export const PageCollection = {
                 document._sys.relativePath,
             )
             const name = slugify(removeFileExtension(filePath))
+            const isDefaultLocale = lang === i18n.defaultLocale
 
             if (name === 'home') {
-                return `/${lang}`
+                return isDefaultLocale ? '/' : `/${lang}`
             }
-
-            return `/${lang}/${name}`
+            return isDefaultLocale ? `/${name}` : `/${lang}/${name}`
         },
     },
     fields: [

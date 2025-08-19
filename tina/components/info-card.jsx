@@ -17,6 +17,7 @@ export default function InfoCard({
             <img
                 src={icon}
                 alt={alt}
+                loading='lazy'
                 className='size-14 mx-auto'
                 data-tina-field={tinaField(tina, 'icon')}
             />

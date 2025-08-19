@@ -15,6 +15,10 @@ export default function SectionLink({
         const target = document.getElementById(section)
         if (!target) return
 
+        if (window.location.hash !== `#${section}`) {
+            history.replaceState(null, '', `#${section}`)
+        }
+
         const startY = window.pageYOffset
         const targetY = target.getBoundingClientRect().top + startY + offset
         const distance = targetY - startY

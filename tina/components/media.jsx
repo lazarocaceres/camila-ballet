@@ -3,15 +3,13 @@ import { tinaField } from 'tinacms/dist/react'
 import SmartLink from './smart-link'
 import 'lite-youtube-embed/src/lite-yt-embed.css'
 
+let ytDefined = false
 const resolutionCache = new Map()
 
 async function detectResolution(videoId) {
-    if (resolutionCache.has(videoId)) {
-        return resolutionCache.get(videoId)
-    }
+    if (resolutionCache.has(videoId)) return resolutionCache.get(videoId)
 
     const options = ['maxresdefault', 'hqdefault', 'sddefault']
-
     for (const res of options) {
         try {
             const response = await fetch(
@@ -22,9 +20,8 @@ async function detectResolution(videoId) {
                 resolutionCache.set(videoId, res)
                 return res
             }
-        } catch (err) {}
+        } catch {}
     }
-
     resolutionCache.set(videoId, 'sddefault')
     return 'sddefault'
 }
@@ -41,14 +38,22 @@ export default function Media({
     const [resolution, setResolution] = useState('sddefault')
 
     useEffect(() => {
+        if (image) return
+        if (ytDefined) return
+        ;(async () => {
+            try {
+                await import('lite-youtube-embed/src/lite-yt-embed.js')
+                ytDefined = true
+            } catch {}
+        })()
+    }, [image])
+
+    useEffect(() => {
+        if (!videoId) return
         let cancelled = false
-
         detectResolution(videoId).then(res => {
-            if (!cancelled) {
-                setResolution(res)
-            }
+            if (!cancelled) setResolution(res)
         })
-
         return () => {
             cancelled = true
         }
@@ -61,10 +66,7 @@ export default function Media({
               className: 'space-y-7',
               'data-tina-field': tinaField(tina),
           }
-        : {
-              className: 'space-y-7',
-              'data-tina-field': tinaField(tina),
-          }
+        : { className: 'space-y-7', 'data-tina-field': tinaField(tina) }
 
     return (
         <Wrapper {...wrapperProps}>
@@ -76,18 +78,20 @@ export default function Media({
                     <img
                         src={image}
                         alt={alt}
+                        loading='lazy'
                         className='w-full object-cover'
                     />
                 ) : (
                     <lite-youtube
                         key={`${videoId}-${resolution}`}
-                        videoId={videoId}
+                        videoid={videoId}
                         videotitle={title}
                         posterquality={resolution}
                         nocookie
                     />
                 )}
             </div>
+
             <h3
                 className='font-playfair-display text-3xl lg:text-4xl'
                 data-tina-field={tinaField(tina, 'title')}
