@@ -59,26 +59,23 @@ export default function LanguageSwitcher({ locale, pathname: path }) {
                         : 'opacity-0 translate-y-0.5 scale-95 pointer-events-none'
                 }`}
             >
-                {languages.map(lang => {
-                    console.log(lang.code === i18n.defaultLocale)
-                    return (
-                        <a
-                            key={lang.code}
-                            href={`${lang.code === i18n.defaultLocale ? '' : `/${lang.code}`}${pathname}`}
-                            onClick={() => setOpen(false)}
-                            className='w-full flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 focus:outline-none'
-                        >
-                            <img
-                                src={`https://flagsapi.com/${lang.flagCode.toUpperCase()}/flat/32.png`}
-                                alt=''
-                                loading='lazy'
-                                className='w-6 h-6 object-cover rounded-sm'
-                            />
-                            <span className='flex-1'>{lang.label}</span>
-                            {lang.code === active.code && <Check />}
-                        </a>
-                    )
-                })}
+                {languages.map(lang => (
+                    <a
+                        key={lang.code}
+                        href={`${lang.code === i18n.defaultLocale ? '' : `/${lang.code}`}${pathname}`}
+                        onClick={() => setOpen(false)}
+                        className='w-full flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 focus:outline-none'
+                    >
+                        <img
+                            src={`https://flagsapi.com/${lang.flagCode.toUpperCase()}/flat/32.png`}
+                            alt=''
+                            loading='lazy'
+                            className='w-6 h-6 object-cover rounded-sm'
+                        />
+                        <span className='flex-1'>{lang.label}</span>
+                        {lang.code === active.code && <Check />}
+                    </a>
+                ))}
             </div>
         </div>
     )
