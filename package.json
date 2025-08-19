@@ -29,10 +29,7 @@
         "@tailwindcss/typography": "0.5.16",
         "@tinacms/cli": "1.10.2",
         "@types/node": "24.3.0",
-        "prettier": "3.6.2",
-        "sharp": "0.34.3",
-        "svgo": "4.0.0",
-        "vite-plugin-image-optimizer": "2.0.2"
+        "prettier": "3.6.2"
     },
     "packageManager": "pnpm@8.8.0+sha1.9922e8b650d393700209ccd81e0ebdbcbe43b0d3"
 }

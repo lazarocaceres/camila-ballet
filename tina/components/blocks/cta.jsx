@@ -84,7 +84,7 @@ export default function Cta({ data }) {
                                 </span>
                                 <SmartLink
                                     href={element.url}
-                                    className='block underline'
+                                    className='block w-fit underline'
                                     data-tina-field={tinaField(element, 'url')}
                                 >
                                     {element.label || element.url}

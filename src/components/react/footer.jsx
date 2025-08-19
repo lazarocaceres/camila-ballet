@@ -1,3 +1,4 @@
+import Image from 'components/react/image'
 import { useTina, tinaField } from 'tinacms/dist/react'
 
 export default function Footer({ globalData }) {
@@ -14,14 +15,21 @@ export default function Footer({ globalData }) {
             <div className='container'>
                 <div className='pt-8 pb-20 border-t border-neutral-200/20 flex gap-5 flex-col lg:flex-row justify-between lg:items-center'>
                     <a href='/'>
-                        <img
+                        <Image
+                            src={footer.logo}
+                            alt={global.genericAlt}
+                            className='w-full max-w-[120px]'
+                            data-tina-field={tinaField(footer, 'logo')}
+                        />
+
+                        {/* <img
                             src={footer.logo}
                             alt={global.genericAlt}
                             loading='lazy'
                             decoding='async'
                             className='w-full max-w-[120px]'
                             data-tina-field={tinaField(footer, 'logo')}
-                        />
+                        /> */}
                     </a>
                     <span data-tina-field={tinaField(footer, 'advise')}>
                         {footer.advise}

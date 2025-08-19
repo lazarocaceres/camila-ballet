@@ -76,11 +76,11 @@ body {
 }
 
 @utility primary-button {
-    @apply px-4 py-2 bg-primary rounded-2xl cursor-pointer transition-colors duration-300 hover:bg-primary/80;
+    @apply px-4 py-2 bg-primary rounded-2xl text-nowrap cursor-pointer transition-colors duration-300 hover:bg-primary/80;
 }
 
 @utility secondary-button {
-    @apply px-4 py-2 bg-neutral-400/10 rounded-2xl cursor-pointer transition-colors duration-300 hover:bg-neutral-400/15;
+    @apply px-4 py-2 bg-neutral-400/10 rounded-2xl text-nowrap cursor-pointer transition-colors duration-300 hover:bg-neutral-400/15;
 }
 
 @utility underline-hover {
