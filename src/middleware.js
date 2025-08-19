@@ -5,10 +5,8 @@ const COOKIE_NAME = 'locale'
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 
 const lc = s => (typeof s === 'string' ? s.toLowerCase() : '')
-const cleanPath = p => {
-    if (!p || p === '/') return '/'
-    return '/' + p.replace(/^\/+|\/+$/g, '')
-}
+const cleanPath = p =>
+    !p || p === '/' ? '/' : '/' + p.replace(/^\/+|\/+$/g, '')
 const firstSeg = pathname =>
     cleanPath(pathname).split('/').filter(Boolean)[0] || ''
 
@@ -66,19 +64,41 @@ const shouldBypass = pathname =>
 const BOT_UA =
     /(Googlebot|Google-InspectionTool|AdsBot-Google|AdsBot-Google-Mobile|AdsBot-Google-Mobile-Apps|Googlebot-Image|Googlebot-News|GoogleOther|GoogleReadAloud|Mediapartners-Google|APIs-Google|bingbot|BingPreview|DuckDuckBot|Baiduspider|YandexBot|YandexImages|Applebot|SemrushBot|AhrefsBot|DotBot|MJ12bot|CCBot|PetalBot|Bytespider|Sogou|Sogou web spider|SeznamBot|Qwantify|NaverBot|facebot|facebookexternalhit|FacebookBot|FacebookCatalog|WhatsApp|Pinterestbot|Pinterest|Twitterbot|LinkedInBot|Slackbot|Discordbot|TelegramBot|Quora Link Preview|SkypeUriPreview|Embedly|rogerbot|SiteAuditBot|W3C_Validator|validator\.nu|Chrome-Lighthouse|Lighthouse|Page Speed|GTmetrix|Pingdom|Screaming Frog|GPTBot|ClaudeBot)/i
 
+const cookieString = ({
+    name,
+    value,
+    url,
+    httpOnly,
+    sameSite = 'Lax',
+    maxAge,
+}) => {
+    const parts = [`${name}=${encodeURIComponent(value)}`, 'Path=/']
+    if (maxAge) parts.push(`Max-Age=${maxAge}`)
+    if (sameSite) parts.push(`SameSite=${sameSite}`)
+    if (httpOnly) parts.push('HttpOnly')
+    if (url.protocol === 'https:') parts.push('Secure')
+    return parts.join('; ')
+}
+
+const redirect = (
+    target,
+    { setCookie } = {},
+    vary = 'Accept-Language, Cookie',
+    status = 307,
+) => {
+    const headers = new Headers({ Location: target, Vary: vary })
+    if (setCookie) headers.append('Set-Cookie', setCookie)
+    return new Response(null, { status, headers })
+}
+
 export const onRequest = defineMiddleware(async (ctx, next) => {
     const url = new URL(ctx.request.url)
     const pathname = cleanPath(url.pathname)
     if (shouldBypass(pathname)) return next()
-    const cookieOpts = {
-        path: '/',
-        httpOnly: false,
-        sameSite: 'lax',
-        secure: url.protocol === 'https:',
-        maxAge: COOKIE_MAX_AGE,
-    }
+
     const ua = ctx.request.headers.get('user-agent') || ''
     const isBot = BOT_UA.test(ua)
+
     const seg = lc(firstSeg(pathname))
     const hasPrefix = locales.has(seg)
     const cookieLocale = lc(ctx.cookies.get(COOKIE_NAME)?.value || '')
@@ -86,24 +106,48 @@ export const onRequest = defineMiddleware(async (ctx, next) => {
         cookieLocale,
         acceptLangHeader: ctx.request.headers.get('accept-language') || '',
     })
+
     if (hasPrefix) {
-        if (cookieLocale !== seg) ctx.cookies.set(COOKIE_NAME, seg, cookieOpts)
-        if (seg === defaultLocale) {
-            const target = withoutLocale(pathname) + url.search
-            if (target !== url.pathname + url.search) {
-                const res = Response.redirect(new URL(target, url), 308)
-                res.headers.append('Vary', 'Accept-Language, Cookie')
-                return res
+        if (cookieLocale !== seg) {
+            const setCookie = cookieString({
+                name: COOKIE_NAME,
+                value: seg,
+                url,
+                httpOnly: false,
+                sameSite: 'Lax',
+                maxAge: COOKIE_MAX_AGE,
+            })
+            if (seg === defaultLocale) {
+                const target = withoutLocale(pathname) + url.search
+                if (target !== url.pathname + url.search) {
+                    return redirect(
+                        target,
+                        { setCookie },
+                        'Accept-Language, Cookie',
+                        308,
+                    )
+                }
             }
+            const res = await next()
+            res.headers.append('Set-Cookie', setCookie)
+            res.headers.append('Vary', 'Accept-Language, Cookie')
+            return res
         }
         return next()
     }
+
     if (!isBot && best !== defaultLocale) {
         const target = withLocale(pathname, best) + url.search
-        const res = Response.redirect(new URL(target, url), 307)
-        ctx.cookies.set(COOKIE_NAME, best, cookieOpts)
-        res.headers.append('Vary', 'Accept-Language, Cookie')
-        return res
+        const setCookie = cookieString({
+            name: COOKIE_NAME,
+            value: best,
+            url,
+            httpOnly: false,
+            sameSite: 'Lax',
+            maxAge: COOKIE_MAX_AGE,
+        })
+        return redirect(target, { setCookie })
     }
+
     return next()
 })

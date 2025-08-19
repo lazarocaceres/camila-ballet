@@ -36,6 +36,7 @@ export default defineConfig({
                     '**/apple-icon.png',
                 ],
                 logStats: true,
+
                 svg: {
                     multipass: true,
                     plugins: [
@@ -59,15 +60,28 @@ export default defineConfig({
                         },
                     ],
                 },
-                png: { compressionLevel: 9, palette: false },
+                png: {
+                    compressionLevel: 9,
+                    palette: true,
+                    quality: 90,
+                },
                 jpeg: {
-                    quality: 86,
+                    quality: 83,
                     progressive: true,
                     mozjpeg: true,
-                    chromaSubsampling: '4:4:4',
+                    chromaSubsampling: '4:2:0',
                 },
-                webp: { quality: 85, effort: 6, smartSubsample: true },
-                avif: { quality: 50, effort: 6 },
+                webp: {
+                    quality: 82,
+                    effort: 6,
+                    smartSubsample: true,
+                    alphaQuality: 95,
+                },
+                avif: {
+                    quality: 56,
+                    effort: 8,
+                    chromaSubsampling: '4:2:0',
+                },
                 gif: {},
                 cache: true,
             }),
