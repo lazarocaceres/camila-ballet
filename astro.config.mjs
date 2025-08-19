@@ -22,18 +22,17 @@ export default defineConfig({
         edgeMiddleware: true,
         imageService: true,
         imagesConfig: {
-            formats: ['image/webp'],
+            formats: ['image/avif', 'image/webp'],
             sizes: [320, 640, 960, 1200, 1600, 1920],
+            remotePatterns: [
+                {
+                    protocol: 'https',
+                    hostname: 'assets.tina.io',
+                    port: '',
+                },
+            ],
         },
     }),
-    image: {
-        remotePatterns: [
-            {
-                protocol: 'https',
-                hostname: 'assets.tina.io',
-            },
-        ],
-    },
     site: SITE_URL || `https://${VERCEL_URL}`,
     integrations: [mdx(), sitemap(), react(), tinaDirective()],
     vite: {
