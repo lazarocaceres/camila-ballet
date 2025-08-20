@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { isDev } from 'lib/utils'
 
 let loaded = false
 let promise = null
@@ -15,8 +16,7 @@ function loadLiteYouTube() {
             })
             .catch(err => {
                 promise = null
-                if (import.meta.env.DEV)
-                    console.warn('[useLiteYouTube] load failed', err)
+                if (isDev) console.warn('[useLiteYouTube] load failed', err)
             })
     }
     return promise || Promise.resolve()

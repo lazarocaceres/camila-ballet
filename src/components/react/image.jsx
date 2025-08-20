@@ -1,4 +1,4 @@
-const isDev = import.meta.env.DEV
+import { isDev } from 'lib/utils'
 
 function isVectorOrGif(src) {
     return /\.svg(?:\?|$)|\.gif(?:\?|$)/i.test(src || '')
