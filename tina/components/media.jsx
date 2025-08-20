@@ -24,7 +24,9 @@ export default function Media({
         videoId,
         hasVideo && near,
     )
+
     const canRenderVideo = hasVideo && near && ytReady && qReady
+    const videoKey = canRenderVideo ? `yt-${videoId}-${quality}` : undefined
 
     const Wrapper = image ? SmartLink : 'div'
     const wrapperProps = image
@@ -51,6 +53,7 @@ export default function Media({
                     />
                 ) : canRenderVideo ? (
                     <lite-youtube
+                        key={videoKey}
                         videoid={videoId}
                         videotitle={title}
                         posterquality={quality}
