@@ -2,7 +2,6 @@
 import 'aos/dist/aos.css'
 import '../styles/global.css'
 import { Font } from 'astro:assets'
-import { ClientRouter } from 'astro:transitions'
 import { i18n } from 'i18n'
 import { buildHeadMeta } from 'lib/head-meta'
 
@@ -58,5 +57,3 @@ type Alternate = { lang: string; url: string }
 {alternates.filter((a: Alternate) => a.lang !== currentLocale).map((a: Alternate) => <link rel='alternate' hreflang={a.lang} href={a.url} />)}
 <link rel='alternate' hreflang={currentLocale} href={alternates.find((a: Alternate) => a.lang === currentLocale)?.url ?? canonicalURL} />
 <link rel='alternate' hreflang='x-default' href={xDefaultUrl} />
-
-<ClientRouter />
