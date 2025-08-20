@@ -15,6 +15,16 @@ const BASE_WIDTHS = [
 ]
 const DEFAULT_MAX_W = 1920
 
+function getCandidates(minW, maxW) {
+    return BASE_WIDTHS.filter(w => w >= minW && w <= maxW)
+}
+function pickSrcWidth(candidates, layoutW) {
+    for (let i = 0; i < candidates.length; i++) {
+        if (candidates[i] >= layoutW) return candidates[i]
+    }
+    return candidates[candidates.length - 1]
+}
+
 export default function Image(props) {
     const {
         src,
@@ -43,10 +53,12 @@ export default function Image(props) {
 
     // ---------- FILL ----------
     if (fill) {
-        const widths = BASE_WIDTHS.filter(w => w >= minW && w <= maxW)
-        const src0 = canOpt ? buildOptimizedUrl(src, widths[0], quality) : src
+        const candidates = getCandidates(minW, maxW)
+        const src0 = canOpt
+            ? buildOptimizedUrl(src, candidates[0], quality)
+            : src
         const srcSet = canOpt
-            ? widths
+            ? candidates
                   .map(w => `${buildOptimizedUrl(src, w, quality)} ${w}w`)
                   .join(', ')
             : undefined
@@ -84,25 +96,22 @@ export default function Image(props) {
     let h = Number.isFinite(height) ? Math.round(height) : undefined
 
     if (!w) {
-        if (isDev) {
+        if (isDev)
             console.warn(
                 '[Image] In non-fill mode, "width" is required to avoid CLS. Falling back to 800.',
             )
-        }
         w = 800
     }
 
     const hardMax = Math.min(maxW, Math.max(w * 2, w))
-    const candidateWidths = BASE_WIDTHS.concat([w, Math.round(w * 1.5)])
-        .filter((x, i, arr) => arr.indexOf(x) === i)
-        .filter(W => W >= minW && W <= hardMax)
-        .sort((a, b) => a - b)
+    const candidates = getCandidates(minW, hardMax)
+    const srcW = candidates.length
+        ? pickSrcWidth(candidates, w)
+        : Math.min(w, maxW)
 
-    const src1 = canOpt
-        ? buildOptimizedUrl(src, Math.min(w, maxW), quality)
-        : src
+    const src1 = canOpt ? buildOptimizedUrl(src, srcW, quality) : src
     const srcSet = canOpt
-        ? candidateWidths
+        ? candidates
               .map(W => `${buildOptimizedUrl(src, W, quality)} ${W}w`)
               .join(', ')
         : undefined
