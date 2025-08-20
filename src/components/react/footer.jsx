@@ -18,18 +18,10 @@ export default function Footer({ globalData }) {
                         <Image
                             src={footer.logo}
                             alt={global.genericAlt}
+                            width={120}
                             className='w-full max-w-[120px]'
                             data-tina-field={tinaField(footer, 'logo')}
                         />
-
-                        {/* <img
-                            src={footer.logo}
-                            alt={global.genericAlt}
-                            loading='lazy'
-                            decoding='async'
-                            className='w-full max-w-[120px]'
-                            data-tina-field={tinaField(footer, 'logo')}
-                        /> */}
                     </a>
                     <span data-tina-field={tinaField(footer, 'advise')}>
                         {footer.advise}

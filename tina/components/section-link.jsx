@@ -1,6 +1,6 @@
 export default function SectionLink({
     section,
-    duration = 2500,
+    duration = 2000,
     offset = 0,
     onClick,
     children,
@@ -25,12 +25,12 @@ export default function SectionLink({
 
         let startTime = null
 
-        // easeInOutQuad
+        // easeInOutCubic
         const ease = (t, b, c, d) => {
             t /= d / 2
-            if (t < 1) return (c / 2) * t * t + b
-            t--
-            return (-c / 2) * (t * (t - 2) - 1) + b
+            if (t < 1) return (c / 2) * t * t * t + b
+            t -= 2
+            return (c / 2) * (t * t * t + 2) + b
         }
 
         const animateScroll = currentTime => {

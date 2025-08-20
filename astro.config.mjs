@@ -23,7 +23,9 @@ export default defineConfig({
         imageService: true,
         imagesConfig: {
             formats: ['image/avif', 'image/webp'],
-            sizes: [320, 640, 960, 1200, 1600, 1920],
+            sizes: [
+                32, 64, 96, 128, 160, 192, 256, 320, 480, 640, 960, 1280, 1600,
+            ],
             remotePatterns: [
                 {
                     protocol: 'https',

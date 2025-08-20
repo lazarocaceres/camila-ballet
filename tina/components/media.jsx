@@ -1,30 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useRef } from 'react'
 import { tinaField } from 'tinacms/dist/react'
 import SmartLink from './smart-link'
-import 'lite-youtube-embed/src/lite-yt-embed.css'
-
-let ytDefined = false
-const resolutionCache = new Map()
-
-async function detectResolution(videoId) {
-    if (resolutionCache.has(videoId)) return resolutionCache.get(videoId)
-
-    const options = ['maxresdefault', 'hqdefault', 'sddefault']
-    for (const res of options) {
-        try {
-            const response = await fetch(
-                `https://img.youtube.com/vi/${videoId}/${res}.jpg`,
-                { method: 'HEAD' },
-            )
-            if (response.ok) {
-                resolutionCache.set(videoId, res)
-                return res
-            }
-        } catch {}
-    }
-    resolutionCache.set(videoId, 'sddefault')
-    return 'sddefault'
-}
+import { useNearViewport } from '../hooks/useNearViewport'
+import { useLiteYouTube } from '../hooks/useLiteYouTube'
+import { usePosterQuality } from '../hooks/usePosterQuality'
 
 export default function Media({
     videoId,
@@ -35,29 +14,16 @@ export default function Media({
     tina = '',
     children,
 }) {
-    const [resolution, setResolution] = useState('sddefault')
+    const containerRef = useRef(null)
+    const hasVideo = !!videoId && !image
 
-    useEffect(() => {
-        if (image) return
-        if (ytDefined) return
-        ;(async () => {
-            try {
-                await import('lite-youtube-embed/src/lite-yt-embed.js')
-                ytDefined = true
-            } catch {}
-        })()
-    }, [image])
-
-    useEffect(() => {
-        if (!videoId) return
-        let cancelled = false
-        detectResolution(videoId).then(res => {
-            if (!cancelled) setResolution(res)
-        })
-        return () => {
-            cancelled = true
-        }
-    }, [videoId])
+    const near = useNearViewport(containerRef, { rootMargin: '1200px 0px' })
+    const ytReady = useLiteYouTube(hasVideo && near)
+    const { ready: qReady, quality } = usePosterQuality(
+        videoId,
+        hasVideo && near,
+    )
+    const canRenderVideo = hasVideo && near && ytReady && qReady
 
     const Wrapper = image ? SmartLink : 'div'
     const wrapperProps = image
@@ -71,7 +37,8 @@ export default function Media({
     return (
         <Wrapper {...wrapperProps}>
             <div
-                className={`${image ? 'relative w-full aspect-[3/2]' : ''} rounded-2xl overflow-hidden`}
+                ref={containerRef}
+                className={`${image ? 'relative w-full aspect-[3/2]' : 'relative w-full aspect-[16/9]'} rounded-2xl overflow-hidden`}
                 data-tina-field={tinaField(tina, image ? 'image' : 'url')}
             >
                 {image ? (
@@ -80,15 +47,20 @@ export default function Media({
                         alt={alt}
                         loading='lazy'
                         decoding='async'
-                        className='w-full object-cover'
+                        className='w-full h-full object-cover'
                     />
-                ) : (
+                ) : canRenderVideo ? (
                     <lite-youtube
-                        key={`${videoId}-${resolution}`}
                         videoid={videoId}
                         videotitle={title}
-                        posterquality={resolution}
+                        posterquality={quality}
                         nocookie
+                    />
+                ) : (
+                    <div
+                        aria-label={title}
+                        role='img'
+                        className='absolute inset-0 bg-neutral-200'
                     />
                 )}
             </div>
