@@ -1,4 +1,5 @@
 import { tinaField } from 'tinacms/dist/react'
+import Image from 'components/react/image'
 import SmartLink from '../smart-link'
 
 export default function Hero({ data }) {
@@ -54,12 +55,11 @@ export default function Hero({ data }) {
                     data-aos-once='true'
                     className='relative w-full aspect-[3/2]'
                 >
-                    <img
+                    <Image
                         src={data.image?.src}
                         alt={data.image?.alt}
-                        loading='lazy'
-                        decoding='async'
-                        className='w-full rounded-2xl'
+                        fill
+                        className='w-full h-full rounded-2xl'
                         data-tina-field={tinaField(data, 'image')}
                     />
                 </div>

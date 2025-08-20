@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTina, tinaField } from 'tinacms/dist/react'
+import Image from 'components/react/image'
 import messages from 'messages/global.json'
 import SmartLink from 'tina/components/smart-link'
 
@@ -19,10 +20,12 @@ export default function Header({ lang, globalData }) {
             <div className='container mx-auto flex justify-between items-center'>
                 <div className='flex gap-12 items-center'>
                     <a href='/' className='shrink-0'>
-                        <img
+                        <Image
                             src={header.logo}
                             alt={global.genericAlt}
-                            fetchPriority='high'
+                            width={105}
+                            quality={100}
+                            priority='high'
                             className='w-full max-w-[105px]'
                             data-tina-field={tinaField(header, 'logo')}
                         />

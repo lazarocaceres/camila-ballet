@@ -1,4 +1,5 @@
 import { tinaField } from 'tinacms/dist/react'
+import Image from 'components/react/image'
 import SmartLink from '../smart-link'
 
 export default function Cta({ data }) {
@@ -44,12 +45,11 @@ export default function Cta({ data }) {
                             </div>
                         </div>
                         <div className='relative w-full lg:max-w-[700px] aspect-[3/2] self-stretch'>
-                            <img
+                            <Image
                                 src={data.image?.src}
                                 alt={data.image?.alt}
-                                loading='lazy'
-                                decoding='async'
-                                className='w-full h-full object-cover'
+                                fill
+                                className='w-full h-full'
                                 data-tina-field={tinaField(data, 'image')}
                             />
                         </div>

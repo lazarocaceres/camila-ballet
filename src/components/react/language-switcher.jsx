@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { i18n } from 'i18n'
+import Image from 'components/react/image'
 import ChevronDown from 'icons/chevron-down'
 import Check from 'icons/check'
 
@@ -51,12 +52,11 @@ export default function LanguageSwitcher({ locale, pathname: path }) {
                 onClick={() => setOpen(o => !o)}
                 className={`flex items-center space-x-1.5 ${open ? 'bg-neutral-100' : 'bg-white'} border border-neutral-200 shadow-sm rounded-full px-3 py-2 transition-all ease-in hover:bg-neutral-100 focus:outline-none cursor-pointer`}
             >
-                <img
+                <Image
                     src={`/${active.flagCode}.png`}
                     alt={active.label}
-                    loading='lazy'
-                    decoding='async'
-                    className='w-6 h-6 object-cover rounded-sm'
+                    width={24}
+                    className='w-6 h-6 rounded-sm'
                 />
                 <ChevronDown open={open} />
             </button>
@@ -75,12 +75,11 @@ export default function LanguageSwitcher({ locale, pathname: path }) {
                         onClick={() => setOpen(false)}
                         className='w-full flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 focus:outline-none'
                     >
-                        <img
+                        <Image
                             src={`/${lang.flagCode}.png`}
                             alt=''
-                            loading='lazy'
-                            decoding='async'
-                            className='w-6 h-6 object-cover rounded-sm'
+                            width={24}
+                            className='w-6 h-6 rounded-sm'
                         />
                         <span className='flex-1'>{lang.label}</span>
                         {lang.code === active.code && <Check />}

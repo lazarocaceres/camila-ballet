@@ -1,4 +1,5 @@
 import { tinaField } from 'tinacms/dist/react'
+import Image from 'components/react/image'
 
 export default function InfoCard({
     icon,
@@ -14,11 +15,10 @@ export default function InfoCard({
             data-tina-field={tinaField(tina)}
             {...props}
         >
-            <img
+            <Image
                 src={icon}
                 alt={alt}
-                loading='lazy'
-                decoding='async'
+                width={56}
                 className='size-14 mx-auto'
                 data-tina-field={tinaField(tina, 'icon')}
             />

@@ -1,5 +1,6 @@
 import { tinaField } from 'tinacms/dist/react'
 import { TinaMarkdown } from 'tinacms/dist/rich-text'
+import Image from 'components/react/image'
 import SmartLink from '../smart-link'
 import MermaidElement from '../mermaid-element'
 import { Prism } from 'tinacms/dist/rich-text/prism'
@@ -23,12 +24,12 @@ export default function Article({ data }) {
                             )
                         },
                         img: ({ url, src, alt, ...rest }) => (
-                            <img
+                            <Image
                                 {...rest}
                                 src={src || url}
                                 alt={alt ?? ''}
-                                loading='lazy'
-                                decoding='async'
+                                fill
+                                className='w-full h-full'
                             />
                         ),
                         code_block: ({ value, lang, ...props }) => {

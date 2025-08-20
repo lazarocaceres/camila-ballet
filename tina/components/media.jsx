@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import { tinaField } from 'tinacms/dist/react'
+import Image from 'components/react/image'
 import SmartLink from './smart-link'
 import { useNearViewport } from '../hooks/useNearViewport'
 import { useLiteYouTube } from '../hooks/useLiteYouTube'
@@ -42,12 +43,11 @@ export default function Media({
                 data-tina-field={tinaField(tina, image ? 'image' : 'url')}
             >
                 {image ? (
-                    <img
+                    <Image
                         src={image}
                         alt={alt}
-                        loading='lazy'
-                        decoding='async'
-                        className='w-full h-full object-cover'
+                        fill
+                        className='w-full h-full'
                     />
                 ) : canRenderVideo ? (
                     <lite-youtube

@@ -1,5 +1,6 @@
 import { tinaField } from 'tinacms/dist/react'
 import Star from 'icons/star'
+import Image from 'components/react/image'
 
 export default function Review({ data }) {
     return (
@@ -20,11 +21,10 @@ export default function Review({ data }) {
                 </span>
                 <div className='flex flex-col lg:flex-row text-center lg:text-left gap-5 justify-center items-center'>
                     <div>
-                        <img
+                        <Image
                             src={data.authorPicture?.src}
                             alt={data.authorPicture?.alt}
-                            loading='lazy'
-                            decoding='async'
+                            width={60}
                             className='w-full max-w-[60px] rounded-full'
                             data-tina-field={tinaField(data, 'authorPicture')}
                         />
@@ -47,11 +47,10 @@ export default function Review({ data }) {
                     </div>
                     <div className='hidden lg:block w-0.5 self-stretch bg-neutral-200/50' />
                     <div>
-                        <img
+                        <Image
                             src={data.authorCompanyPicture?.src}
                             alt={data.authorCompanyPicture?.alt}
-                            loading='lazy'
-                            decoding='async'
+                            width={180}
                             className='w-full max-w-[180px]'
                             data-tina-field={tinaField(
                                 data,
