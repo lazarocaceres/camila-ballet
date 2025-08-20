@@ -59,6 +59,7 @@ export default function Hero({ data }) {
                         src={data.image?.src}
                         alt={data.image?.alt}
                         fill
+                        priority
                         className='w-full h-full'
                         imgClassName='rounded-2xl'
                         data-tina-field={tinaField(data, 'image')}
