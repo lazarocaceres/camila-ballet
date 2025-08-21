@@ -14,7 +14,11 @@ export const GlobalCollection = {
         },
         router: ({ document }) => {
             const { lang } = extractLanguageAndPath(document._sys.relativePath)
-            return lang === i18n.defaultLocale ? '/' : `/${lang}`
+            const defaultLocale = i18n.defaultLocale
+
+            return lang === defaultLocale
+                ? `/?lang=${defaultLocale}`
+                : `/${lang}?lang=${lang}`
         },
     },
     fields: [

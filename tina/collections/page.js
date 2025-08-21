@@ -21,12 +21,17 @@ export const PageCollection = {
                 document._sys.relativePath,
             )
             const name = slugify(removeFileExtension(filePath))
-            const isDefaultLocale = lang === i18n.defaultLocale
+            const defaultLocale = i18n.defaultLocale
+            const isDefaultLocale = lang === defaultLocale
 
             if (name === 'home') {
-                return isDefaultLocale ? '/' : `/${lang}`
+                return isDefaultLocale
+                    ? `/?lang=${defaultLocale}`
+                    : `/${lang}?lang=${lang}`
             }
-            return isDefaultLocale ? `/${name}` : `/${lang}/${name}`
+            return isDefaultLocale
+                ? `/${name}?lang=${defaultLocale}`
+                : `/${lang}/${name}?lang=${lang}`
         },
     },
     fields: [
