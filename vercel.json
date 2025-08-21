@@ -1,18 +1,3 @@
 {
-    "functions": { "api/locale.js": { "runtime": "edge" } },
-    "routes": [
-        {
-            "src": "/(?:_astro|assets|_image|\\.well-known)(?:/.*)?",
-            "dest": "/$0"
-        },
-        { "src": "/favicon(?:\\.\\w+)?", "dest": "/$0" },
-        { "src": "/robots\\.txt", "dest": "/robots.txt" },
-        { "src": "/sitemap(?:\\.xml)?", "dest": "/$0" },
-        {
-            "src": "/.*\\.(?:png|jpe?g|webp|gif|svg|ico|css|js|mjs|txt|xml|json|map|woff2?|ttf|otf|eot|webmanifest|wasm|pdf|avif|heic|heif|mp4|webm|ogg|mp3|wav)$",
-            "dest": "/$0"
-        },
-        { "src": "/(.*)", "dest": "/api/locale" }
-    ],
     "trailingSlash": false
 }

@@ -1,6 +1,5 @@
-import { i18n } from 'i18n'
-
-export const config = { runtime: 'edge' }
+import { next } from '@vercel/functions'
+import { i18n } from './i18n'
 
 const COOKIE = 'locale'
 const MAX_AGE = 60 * 60 * 24 * 365
@@ -8,8 +7,6 @@ const MAX_AGE = 60 * 60 * 24 * 365
 const locales = new Set(i18n.locales.map(s => s.toLowerCase()))
 const DEF = i18n.defaultLocale.toLowerCase()
 
-const RE_ASSET =
-    /\.(png|jpe?g|webp|gif|svg|ico|css|js|mjs|txt|xml|json|map|woff2?|ttf|otf|eot|webmanifest|wasm|pdf|avif|heic|heif|mp4|webm|ogg|mp3|wav)$/i
 const RE_BOT =
     /(Google|bingbot|BingPreview|DuckDuckBot|Yandex|Applebot|SemrushBot|AhrefsBot|DotBot|GPTBot|ClaudeBot|Slackbot|Discordbot|Twitterbot|LinkedInBot|WhatsApp|Facebook|Pinterest)/i
 
@@ -21,17 +18,6 @@ const withoutLocale = p => {
     const segs = clean(p).split('/').filter(Boolean)
     return segs.length ? '/' + segs.slice(1).join('/') : '/'
 }
-const bypass = p =>
-    p.startsWith('/_astro/') ||
-    p.startsWith('/_image') ||
-    p.startsWith('/assets/') ||
-    p.startsWith('/.well-known') ||
-    p.startsWith('/api') ||
-    p.startsWith('/favicon') ||
-    p === '/robots.txt' ||
-    p.startsWith('/sitemap') ||
-    RE_ASSET.test(p)
-
 const getCookie = (cookie, name) => {
     if (!cookie) return ''
     const m = cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'))
@@ -52,9 +38,8 @@ function pickBest(cookieLocale, acceptHeader) {
     const c = lc(cookieLocale || '')
     if (c && locales.has(c)) return c
     if (acceptHeader) {
-        const items = acceptHeader.split(',')
-        for (let i = 0; i < items.length; i++) {
-            const tag = lc(items[i].split(';')[0].trim())
+        for (const raw of acceptHeader.split(',')) {
+            const tag = lc(raw.split(';')[0].trim())
             if (!tag || tag === '*') continue
             const base = lc(tag.split('-')[0])
             if (locales.has(tag)) return tag
@@ -64,20 +49,19 @@ function pickBest(cookieLocale, acceptHeader) {
     return DEF
 }
 
-export default async function handler(req) {
-    const url = new URL(req.url)
+export default function middleware(request) {
+    const url = new URL(request.url)
     const path = clean(url.pathname)
-    if (bypass(path)) return fetch(req)
 
-    const ua = req.headers.get('user-agent') || ''
+    const ua = request.headers.get('user-agent') || ''
     const isBot = RE_BOT.test(ua)
 
     const seg = lc(firstSeg(path))
     const hasPrefix = locales.has(seg)
-    const cookieLocale = getCookie(req.headers.get('cookie') || '', COOKIE)
+    const cookieLocale = getCookie(request.headers.get('cookie') || '', COOKIE)
     const best = pickBest(
         cookieLocale,
-        req.headers.get('accept-language') || '',
+        request.headers.get('accept-language') || '',
     )
 
     if (hasPrefix) {
@@ -96,12 +80,14 @@ export default async function handler(req) {
         }
 
         if (cookieLocale !== seg) {
-            const res = await fetch(req)
-            res.headers.append('Set-Cookie', setCookie(COOKIE, seg, url))
-            res.headers.append('Vary', 'Accept-Language, Cookie')
-            return res
+            return next({
+                headers: {
+                    'Set-Cookie': setCookie(COOKIE, seg, url),
+                    Vary: 'Accept-Language, Cookie',
+                },
+            })
         }
-        return fetch(req)
+        return next()
     }
 
     if (!isBot && best !== DEF) {
@@ -115,5 +101,11 @@ export default async function handler(req) {
         })
     }
 
-    return fetch(req)
+    return next()
+}
+
+export const config = {
+    matcher: [
+        '/((?!api|_astro|assets|_image|\\.well-known|favicon\\.ico|robots\\.txt|sitemap\\.xml|.*\\.(?:png|jpe?g|webp|gif|svg|ico|css|js|mjs|map|woff2?|ttf|otf|eot|txt|xml|json|pdf|avif|heic|heif|mp4|webm|ogg|mp3|wav)).*)',
+    ],
 }

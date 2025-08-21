@@ -16,6 +16,7 @@
         "@astrojs/vercel": "8.2.6",
         "@tailwindcss/vite": "4.1.12",
         "@tanstack/react-virtual": "3.13.12",
+        "@vercel/functions": "^2.2.12",
         "aos": "2.3.4",
         "astro": "5.13.2",
         "lite-youtube-embed": "0.3.3",
