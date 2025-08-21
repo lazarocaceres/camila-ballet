@@ -31,21 +31,16 @@ const getCookie = (cookie, name) => {
     return m ? decodeURIComponent(m[1]) : ''
 }
 const setCookie = (name, value, url) => {
-    const a = [
-        `${name}=${encodeURIComponent(value)}`,
-        'Path=/',
-        `Max-Age=${COOKIE_MAX_AGE}`,
-        'SameSite=Lax',
-    ]
-    if (url.protocol === 'https:') a.push('Secure')
-    return a.join('; ')
+    const v = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${COOKIE_MAX_AGE}; SameSite=Lax`
+    return url.protocol === 'https:' ? v + '; Secure' : v
 }
 const pickBest = (cookieLocale, acceptHeader) => {
     const c = lc(cookieLocale || '')
     if (c && LOCALES.has(c)) return c
     if (acceptHeader) {
-        for (const raw of acceptHeader.split(',')) {
-            const tag = lc(raw.split(';')[0].trim())
+        const parts = acceptHeader.split(',')
+        for (let i = 0; i < parts.length; i++) {
+            const tag = lc(parts[i].split(';')[0].trim())
             if (!tag || tag === '*') continue
             const base = lc(tag.split('-')[0])
             if (LOCALES.has(tag)) return tag
@@ -56,12 +51,18 @@ const pickBest = (cookieLocale, acceptHeader) => {
 }
 
 export default function middleware(request) {
+    const original = new URL(request.url)
     const url = new URL(request.url)
     const path = clean(url.pathname)
+    const originalSearch = original.search
+    const originalHash = original.hash
+
     const ua = request.headers.get('user-agent') || ''
+    const cookieHeader = request.headers.get('cookie') || ''
+    const acceptLang = request.headers.get('accept-language') || ''
     const isBot = RE_BOT.test(ua)
 
-    const cookie = lc(getCookie(request.headers.get('cookie') || '', COOKIE))
+    const cookie = lc(getCookie(cookieHeader, COOKIE))
     const seg = lc(seg0(path))
     const hasPrefix = LOCALES.has(seg)
 
@@ -78,37 +79,38 @@ export default function middleware(request) {
               ? path
               : withLocale(path, chosen)
 
-        if (
-            targetPath !== path ||
-            cleanSearch !== new URL(request.url).search
-        ) {
+        if (targetPath !== path || cleanSearch !== originalSearch) {
             return new Response(null, {
                 status: 307,
                 headers: {
-                    Location: targetPath + cleanSearch,
-                    'Set-Cookie': setCookie(COOKIE, chosen, url),
+                    Location: targetPath + cleanSearch + (originalHash || ''),
+                    'Set-Cookie':
+                        cookie !== chosen
+                            ? setCookie(COOKIE, chosen, url)
+                            : undefined,
                     Vary: 'Accept-Language, Cookie',
                 },
             })
         }
 
-        return next({
-            headers: {
-                'Set-Cookie': setCookie(COOKIE, chosen, url),
-                Vary: 'Accept-Language, Cookie',
-            },
-        })
+        if (cookie !== chosen) {
+            return next({
+                headers: { 'Set-Cookie': setCookie(COOKIE, chosen, url) },
+            })
+        }
+        return next()
     }
 
-    const best = pickBest(cookie, request.headers.get('accept-language') || '')
-
+    const best = pickBest(cookie, acceptLang)
     if (hasPrefix) {
         if (cookie && LOCALES.has(cookie) && cookie !== seg) {
             return new Response(null, {
                 status: 307,
                 headers: {
                     Location:
-                        withLocale(withoutLocale(path), cookie) + url.search,
+                        withLocale(withoutLocale(path), cookie) +
+                        originalSearch +
+                        (originalHash || ''),
                     'Set-Cookie': setCookie(COOKIE, cookie, url),
                     Vary: 'Accept-Language, Cookie',
                 },
@@ -116,13 +118,20 @@ export default function middleware(request) {
         }
 
         if (seg === DEFAULT) {
-            const target = withoutLocale(path) + url.search
-            if (target !== url.pathname + url.search) {
+            const target =
+                withoutLocale(path) + originalSearch + (originalHash || '')
+            if (
+                target !==
+                original.pathname + original.search + (originalHash || '')
+            ) {
                 return new Response(null, {
                     status: 308,
                     headers: {
                         Location: target,
-                        'Set-Cookie': setCookie(COOKIE, DEFAULT, url),
+                        'Set-Cookie':
+                            cookie !== DEFAULT
+                                ? setCookie(COOKIE, DEFAULT, url)
+                                : undefined,
                         Vary: 'Accept-Language, Cookie',
                     },
                 })
@@ -131,10 +140,7 @@ export default function middleware(request) {
 
         if (!cookie || cookie !== seg) {
             return next({
-                headers: {
-                    'Set-Cookie': setCookie(COOKIE, seg, url),
-                    Vary: 'Accept-Language, Cookie',
-                },
+                headers: { 'Set-Cookie': setCookie(COOKIE, seg, url) },
             })
         }
         return next()
@@ -145,8 +151,14 @@ export default function middleware(request) {
         return new Response(null, {
             status: 307,
             headers: {
-                Location: withLocale(path, targetLocale) + url.search,
-                'Set-Cookie': setCookie(COOKIE, targetLocale, url),
+                Location:
+                    withLocale(path, targetLocale) +
+                    originalSearch +
+                    (originalHash || ''),
+                'Set-Cookie':
+                    cookie !== targetLocale
+                        ? setCookie(COOKIE, targetLocale, url)
+                        : undefined,
                 Vary: 'Accept-Language, Cookie',
             },
         })
