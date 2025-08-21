@@ -25,13 +25,9 @@ export const PageCollection = {
             const isDefaultLocale = lang === defaultLocale
 
             if (name === 'home') {
-                return isDefaultLocale
-                    ? `/?lang=${defaultLocale}`
-                    : `/${lang}?lang=${lang}`
+                return isDefaultLocale ? '/' : `/${lang}`
             }
-            return isDefaultLocale
-                ? `/${name}?lang=${defaultLocale}`
-                : `/${lang}/${name}?lang=${lang}`
+            return isDefaultLocale ? `/${name}` : `/${lang}/${name}`
         },
     },
     fields: [
