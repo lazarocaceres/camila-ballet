@@ -19,7 +19,6 @@ const { SITE_URL, VERCEL_URL } = loadEnv(
 export default defineConfig({
     output: 'static',
     adapter: vercel({
-        edgeMiddleware: true,
         imageService: true,
         imagesConfig: {
             formats: ['image/avif', 'image/webp'],

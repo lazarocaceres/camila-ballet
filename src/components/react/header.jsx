@@ -24,7 +24,7 @@ export default function Header({ lang, globalData }) {
                             src={header.logo}
                             alt={global.genericAlt}
                             width={105}
-                            height={50}
+                            height={41}
                             quality={100}
                             priority='high'
                             className='w-full max-w-[105px]'

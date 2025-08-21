@@ -51,7 +51,7 @@ export default function Review({ data }) {
                         <Image
                             src={data.authorCompanyPicture?.src}
                             alt={data.authorCompanyPicture?.alt}
-                            width={180}
+                            width={185}
                             height={100}
                             className='w-full max-w-[180px]'
                             data-tina-field={tinaField(
