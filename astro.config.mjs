@@ -41,11 +41,20 @@ export default defineConfig({
     },
     vite: {
         plugins: [tailwindcss()],
-        resolve: { dedupe: ['react', 'react-dom'] },
         build: {
-            target: 'es2020',
-            cssCodeSplit: true,
-            modulePreload: true,
+            minify: 'terser',
+            terserOptions: {
+                module: true,
+                compress: {
+                    defaults: true,
+                    passes: 3,
+                    drop_console: true,
+                    drop_debugger: true,
+                },
+                mangle: true,
+                format: { comments: false },
+                safari10: false,
+            },
             sourcemap: false,
         },
     },

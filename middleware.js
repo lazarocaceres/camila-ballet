@@ -10,6 +10,7 @@ const DEFAULT = I18N.defaultLocale.toLowerCase()
 
 const RE_BOT =
     /(Googlebot|Google-InspectionTool|AdsBot-Google|AdsBot-Google-Mobile|AdsBot-Google-Mobile-Apps|Googlebot-Image|Googlebot-News|GoogleOther|GoogleReadAloud|Mediapartners-Google|APIs-Google|bingbot|BingPreview|DuckDuckBot|Baiduspider|YandexBot|YandexImages|Yandex|Applebot|SemrushBot|AhrefsBot|DotBot|MJ12bot|CCBot|PetalBot|Bytespider|Sogou|SogouSpider|Sogou web spider|SeznamBot|Qwantify|NaverBot|facebot|facebookexternalhit|FacebookBot|FacebookCatalog|Twitterbot|LinkedInBot|Slackbot|Discordbot|TelegramBot|Quora Link Preview|SkypeUriPreview|Embedly|rogerbot|SiteAuditBot|W3C_Validator|validator\.nu|Chrome-Lighthouse|Lighthouse|Page Speed|GTmetrix|Pingdom|Screaming Frog|GPTBot|ClaudeBot|PerplexityBot|YouBot|Amazonbot|HeadlessChrome|PhantomJS|curl|wget)/i
+const RE_COOKIE = new RegExp('(?:^|; )' + COOKIE + '=([^;]*)')
 
 export const config = {
     matcher: [
@@ -18,75 +19,98 @@ export const config = {
 }
 
 const lc = s => (typeof s === 'string' ? s.toLowerCase() : '')
-const clean = p => (!p || p === '/' ? '/' : '/' + p.replace(/^\/+|\/+$/g, ''))
-const seg0 = p => clean(p).split('/').filter(Boolean)[0] || ''
+
+const clean = p => {
+    if (!p || p === '/') return '/'
+    let a = 0,
+        b = p.length - 1
+    while (a <= b && p.charCodeAt(a) === 47) a++
+    while (b >= a && p.charCodeAt(b) === 47) b--
+    return a > b ? '/' : '/' + p.slice(a, b + 1)
+}
+
+const seg0 = p => {
+    const c = clean(p)
+    if (c === '/') return ''
+    const n = c.indexOf('/', 1)
+    return n === -1 ? c.slice(1) : c.slice(1, n)
+}
+
 const withLocale = (p, l) => (clean(p) === '/' ? `/${l}` : `/${l}${clean(p)}`)
 const withoutLocale = p => {
-    const parts = clean(p).split('/').filter(Boolean)
-    return parts.length ? '/' + parts.slice(1).join('/') : '/'
+    const c = clean(p)
+    if (c === '/') return '/'
+    const n = c.indexOf('/', 1)
+    return n === -1 ? '/' : c.slice(n)
 }
-const getCookie = (cookie, name) => {
-    if (!cookie) return ''
-    const m = cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'))
+
+const getCookie = cookieHeader => {
+    if (!cookieHeader) return ''
+    const m = RE_COOKIE.exec(cookieHeader)
     return m ? decodeURIComponent(m[1]) : ''
 }
-const setCookie = (name, value, url) => {
-    const v = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${COOKIE_MAX_AGE}; SameSite=Lax`
-    return url.protocol === 'https:' ? v + '; Secure' : v
-}
+
+const setCookie = (value, isHttps) =>
+    `${COOKIE}=${encodeURIComponent(value)}; Path=/; Max-Age=${COOKIE_MAX_AGE}; SameSite=Lax${isHttps ? '; Secure' : ''}`
+
 const pickBest = (cookieLocale, acceptHeader) => {
-    const c = lc(cookieLocale || '')
+    const c = lc(cookieLocale)
     if (c && LOCALES.has(c)) return c
     if (acceptHeader) {
         const parts = acceptHeader.split(',')
         for (let i = 0; i < parts.length; i++) {
-            const tag = lc(parts[i].split(';')[0].trim())
+            const s = parts[i]
+            const semi = s.indexOf(';')
+            const tag = lc(semi === -1 ? s.trim() : s.slice(0, semi).trim())
             if (!tag || tag === '*') continue
-            const base = lc(tag.split('-')[0])
             if (LOCALES.has(tag)) return tag
-            if (LOCALES.has(base)) return base
+            const dash = tag.indexOf('-')
+            if (dash > 0) {
+                const base = tag.slice(0, dash)
+                if (LOCALES.has(base)) return base
+            }
         }
     }
     return DEFAULT
 }
 
+const respond = (status, location, cookieValue, vary = true) => {
+    const headers = {}
+    if (location) headers['Location'] = location
+    if (cookieValue) {
+        headers['Set-Cookie'] = cookieValue
+    } else {
+        headers['Cache-Control'] =
+            'public, s-maxage=600, max-age=600, stale-while-revalidate=30'
+    }
+    if (vary) headers['Vary'] = 'Accept-Language, Cookie'
+    return new Response(null, { status, headers })
+}
+
 export default function middleware(request) {
-    const original = new URL(request.url)
     const url = new URL(request.url)
+    const isHttps = url.protocol === 'https:'
     const path = clean(url.pathname)
 
-    if (path === '/admin' || path.startsWith('/admin/')) {
-        return next()
-    }
+    if (path === '/admin' || path.startsWith('/admin/')) return next()
+    const ref = request.headers.get('referer')
+    if (ref && ref.indexOf('/admin') !== -1) return next()
 
-    const referer = request.headers.get('referer') || ''
-    if (referer.includes('/admin')) {
-        return next()
-    }
-
-    const originalSearch = original.search
-    const originalHash = original.hash
+    const originalSearch = url.search
+    const originalHash = url.hash
 
     const ua = request.headers.get('user-agent') || ''
     const cookieHeader = request.headers.get('cookie') || ''
     const acceptLang = request.headers.get('accept-language') || ''
     const isBot = RE_BOT.test(ua)
 
-    const cookie = lc(getCookie(cookieHeader, COOKIE))
+    const cookie = lc(getCookie(cookieHeader))
     const seg = lc(seg0(path))
     const hasPrefix = LOCALES.has(seg)
 
-    const rawChosen = lc(url.searchParams.get(LANG_PARAM))
-    const chosen = rawChosen ? rawChosen.split('-')[0] : ''
-    const hasChosen = chosen && LOCALES.has(chosen)
-
-    const withHeaders = (status, { location, cookieValue, vary = true }) => {
-        const headers = new Headers()
-        if (location) headers.set('Location', location)
-        if (cookieValue) headers.set('Set-Cookie', cookieValue)
-        if (vary) headers.set('Vary', 'Accept-Language, Cookie')
-        return new Response(null, { status, headers })
-    }
+    const rawChosen = url.searchParams.get(LANG_PARAM)
+    const chosen = rawChosen ? lc(rawChosen.split('-')[0]) : ''
+    const hasChosen = !!chosen && LOCALES.has(chosen)
 
     if (hasChosen) {
         url.searchParams.delete(LANG_PARAM)
@@ -100,18 +124,14 @@ export default function middleware(request) {
               : withLocale(path, chosen)
 
         if (targetPath !== path || cleanSearch !== originalSearch) {
-            return withHeaders(307, {
-                location: targetPath + cleanSearch + (originalHash || ''),
-                cookieValue:
-                    cookie !== chosen
-                        ? setCookie(COOKIE, chosen, url)
-                        : undefined,
-            })
+            const loc = targetPath + cleanSearch + (originalHash || '')
+            const sc =
+                cookie !== chosen ? setCookie(chosen, isHttps) : undefined
+            return respond(307, loc, sc)
         }
-
         if (cookie !== chosen) {
             return next({
-                headers: { 'Set-Cookie': setCookie(COOKIE, chosen, url) },
+                headers: { 'Set-Cookie': setCookie(chosen, isHttps) },
             })
         }
         return next()
@@ -121,52 +141,41 @@ export default function middleware(request) {
 
     if (hasPrefix) {
         if (cookie && LOCALES.has(cookie) && cookie !== seg) {
-            return withHeaders(307, {
-                location:
-                    withLocale(withoutLocale(path), cookie) +
-                    originalSearch +
-                    (originalHash || ''),
-                cookieValue: setCookie(COOKIE, cookie, url),
-            })
+            const loc =
+                withLocale(withoutLocale(path), cookie) +
+                originalSearch +
+                (originalHash || '')
+            return respond(307, loc, setCookie(cookie, isHttps))
         }
 
         if (seg === DEFAULT) {
             const target =
                 withoutLocale(path) + originalSearch + (originalHash || '')
-            if (
-                target !==
-                original.pathname + original.search + (originalHash || '')
-            ) {
-                return withHeaders(308, {
-                    location: target,
-                    cookieValue:
-                        cookie !== DEFAULT
-                            ? setCookie(COOKIE, DEFAULT, url)
-                            : undefined,
-                })
+            const current = url.pathname + url.search + (originalHash || '')
+            if (target !== current) {
+                const sc =
+                    cookie !== DEFAULT ? setCookie(DEFAULT, isHttps) : undefined
+                return respond(308, target, sc)
             }
         }
 
         if (!cookie || cookie !== seg) {
-            return next({
-                headers: { 'Set-Cookie': setCookie(COOKIE, seg, url) },
-            })
+            return next({ headers: { 'Set-Cookie': setCookie(seg, isHttps) } })
         }
         return next()
     }
 
     const targetLocale = cookie && LOCALES.has(cookie) ? cookie : best
     if (!isBot && targetLocale !== DEFAULT) {
-        return withHeaders(307, {
-            location:
-                withLocale(path, targetLocale) +
-                originalSearch +
-                (originalHash || ''),
-            cookieValue:
-                cookie !== targetLocale
-                    ? setCookie(COOKIE, targetLocale, url)
-                    : undefined,
-        })
+        const loc =
+            withLocale(path, targetLocale) +
+            originalSearch +
+            (originalHash || '')
+        const sc =
+            cookie !== targetLocale
+                ? setCookie(targetLocale, isHttps)
+                : undefined
+        return respond(307, loc, sc)
     }
 
     return next()
