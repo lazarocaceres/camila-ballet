@@ -1,77 +1,106 @@
-This is Camila Website.
+# Project Overview: Ultra-Fast Static Site with Astro, Edge-Driven i18n, and TinaCMS
 
-# Camila Rodríguez | Ballet
+## Executive Summary
 
-Start editing with TinaCMS at `/admin`!
+This project delivers a **fully static** website built with **Astro**, served from the CDN, while language detection and routing are handled **at the edge** (Vercel Routing Middleware). Content is **business-editable** via **TinaCMS** (Git-backed). The result: **maximum performance**, predictable SEO, and a low-friction editorial workflow.
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+---
 
-![blog](https://github.com/withastro/astro/assets/2244813/ff10799f-a816-4703-b967-c78997e8323d)
+## Highlights
 
-Features:
+- **Performance**
+    - All HTML pages are **pre-rendered static**; assets are fingerprinted and long-cached.
+    - i18n is resolved **before** any HTML is served (Edge Middleware), with **no SSR** and **no extra client JS** for routing.
+    - Images are optimized; intrinsic `width`/`height` set to eliminate CLS.
 
-- ✅ Markdown & MDX support + TinaCMS Markdown Component
-- ✅ TinaCMS Collections (Pages, Blogs, Config)
-- ✅ Visual Editing using Custom Loaders and Client Directives (requires React)
-- ✅ 100/100 Lighthouse performance
-- ✅ View transitions are enabled
-- ✅ Minimal styling (make it your own!)
-- ✅ SEO-friendly with canonical URLs and OpenGraph data
-- ✅ Sitemap support
+- **Edge i18n (deterministic & fast)**
+    - Detection priority: **cookie** → `Accept-Language` → **default locale**.
+    - **Sticky cookie** keeps users in their chosen language during navigation.
+    - Elegant explicit switch via `?lang=xx`; the middleware sets the cookie and **strips the param** on redirect.
+    - **Canonical default**: default locale is served **without** a URL prefix (configurable).
+    - Crawlers are not pointlessly redirected; canonical rules remain clean.
 
-## 🚀 Project Structure
+- **Content Editing (TinaCMS)**
+    - In-repo content (Markdown/MDX/YAML/JSON) with instant preview.
+    - Low operational burden: no extra servers; PR-based workflow.
 
-Inside of your project, you'll see the following folders and files:
+- **SEO & Internationalization**
+    - Automatic **sitemaps** (with per-locale alternate links).
+    - Automatic **`<link rel="alternate" hreflang="…">`** across locales, including **`x-default`**.
+    - Automatic **web app manifests** per page/locale where needed.
+    - Clean canonicals, consistent URL design, and `Vary` only when appropriate.
 
-```text
-├── README.md
-├── astro-tina-directive/
-├── astro.config.mjs
-├── package.json
-├── pnpm-lock.yaml
-├── public/
-├── src
-│   ├── components
-│   ├── content
-│   ├── content.config.ts
-│   ├── layouts
-│   ├── pages
-│   └── styles
-├── tina
-│   ├── collections
-│   ├── components
-│   ├── config.ts
-│   ├── pages
-│   └── tina-lock.json
-└── tsconfig.json
+---
+
+## Architecture at a Glance
+
+```mermaid
+flowchart LR
+  U[User] -->|Request| MW[Edge Middleware (i18n)]
+  MW -->|redirect if needed| CDN[CDN / Static Files]
+  CDN -->|Static HTML + assets| U
+  CMS[TinaCMS] --- Repo[(Content Repo)]
+  Dev[Developers] -->|Astro build| Dist[/static dist/]
+  Dist --> CDN
 ```
 
-Each page is exposed as a route based on its file name which are generated from the content under `src/content/` (excluding the `config` folder).
+---
 
-To enable Visual Editing with TinaCMS we have had to use React components and a new `client:tina` Directive. Which is the code located under `astro-tina-directive`.
+## Request Flow (Edge i18n)
 
-Under the `tina/` folder we have, `collections/` which holds our TinaCMS schema definitions. Under `components/` we have a custom Icon Component that is used within the TinaCMS UI. Under `pages/` we have the "wrappers" that make the Visual Editing work, using the `useTina` hook.
+1. **Matcher** runs only for HTML (assets/API bypass straight to CDN).
+2. If URL has **`?lang=xx`**:
+    - Set `locale=xx` cookie, normalize URL (add/remove prefix), **strip `?lang`**, and respond **307**.
 
-The `pages/index.astro` is the "Home" page - This is a special case and has been setup to look for the `content/page/home.mdx` file.
+3. If URL **has a locale prefix**:
+    - If it differs from the cookie (and a cookie exists): **307** to the cookie’s locale (**sticky**).
+    - If it equals the **default locale**: **308** to the **prefix-less** canonical path.
+    - Otherwise, pass through to the static file.
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+4. If URL **has no prefix**:
+    - For users (not bots): **307** to the best locale when it’s not the default.
+    - For bots: serve the **default** without a prefix (avoids duplicate content).
 
-The `src/content/` directory contains "collections" of related Markdown and MDX documents. Use `getCollection()` to retrieve posts from `src/content/blog/`, and type-check your frontmatter using an optional schema. See [Astro's Content Collections docs](https://docs.astro.build/en/guides/content-collections/) to learn more.
+5. Query params (except `lang`) and the hash are preserved across redirects.
 
-> [!NOTE]
-> To use `getCollection()` we need to add a schema in `content.config.ts` with a custom loader that uses the correct TinaCMS Collection.
+---
 
-Any static assets, like images, can be placed in the `public/` directory.
+## Automation: Manifests, Sitemaps & Alternates
 
-## 🧞 Commands
+- **Sitemaps** are generated automatically for all pages and locales, with proper **`<xhtml:link rel="alternate" hreflang="…">`** entries and an **`x-default`** fallback.
+- **Page-level alternates** are injected automatically: each page outputs the full set of `hreflang` tags to interlink localized equivalents.
+- **Web App Manifests** are generated automatically per page/locale as needed (icons, theme, language, scope), keeping configuration DRY and consistent.
 
-All commands are run from the root of the project, from a terminal:
+---
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+## Performance Practices
+
+- **LCP** targeted under \~1.5s (4G fast); **CLS** near 0; minimal TTFB thanks to Edge decisioning + CDN.
+- **Images**: modern formats (WebP/AVIF), intrinsic dimensions, lazy where appropriate.
+- **CSS**: critical inline; remainder deferred; no heavy runtime frameworks.
+- **JS**: near-zero on most pages (only the language selector uses a tiny helper).
+- **Caching**
+    - HTML: CDN-controlled; middleware only varies when setting cookies/redirecting.
+    - Assets: `Cache-Control: public, max-age=31536000, immutable`.
+
+---
+
+## Editorial Workflow (TinaCMS)
+
+- Authors edit content visually; commits flow to the repo.
+- CI builds Astro to static output; Vercel deploys to the CDN.
+- Previews reflect the current locale (cookie aware) for accurate review.
+
+---
+
+## Operational Notes
+
+- **Observability**: Edge logs capture redirect decisions (locale chosen, source of decision).
+- **Safety**: Cookie uses `SameSite=Lax` and `Secure` on HTTPS; no `HttpOnly` to allow optional client-side updates from the language picker.
+- **Flexibility**: “Sticky cookie” and “default without prefix” behaviors are feature-flag-friendly.
+
+---
+
+## Outcome
+
+A site that **loads instantly**, **speaks the user’s language from the first byte**, and lets the business **edit anything** with confidence—while keeping infrastructure simple, costs low, and **SEO** / **international reach** first-class.
