@@ -41,7 +41,7 @@ export default function Media({
         <Wrapper {...wrapperProps}>
             <div
                 ref={containerRef}
-                className={`${image ? 'relative w-full aspect-[3/2]' : 'relative w-full aspect-[16/9]'} rounded-2xl overflow-hidden`}
+                className={`relative w-full ${!image ? 'aspect-[16/9]' : ''} rounded-2xl overflow-hidden`}
                 data-tina-field={tinaField(tina, image ? 'image' : 'url')}
             >
                 {image ? (
@@ -49,6 +49,7 @@ export default function Media({
                         src={image}
                         alt={alt}
                         fill
+                        ratio={3 / 2}
                         className='w-full h-full'
                     />
                 ) : canRenderVideo ? (

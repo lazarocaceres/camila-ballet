@@ -50,21 +50,18 @@ export default function Hero({ data }) {
                         </div>
                     </div>
                 </div>
-                <div
+                <Image
                     data-aos='fade-up'
                     data-aos-once='true'
-                    className='relative w-full aspect-[3/2]'
-                >
-                    <Image
-                        src={data.image?.src}
-                        alt={data.image?.alt}
-                        fill
-                        priority
-                        className='w-full h-full'
-                        imgClassName='rounded-2xl'
-                        data-tina-field={tinaField(data, 'image')}
-                    />
-                </div>
+                    src={data.image?.src}
+                    alt={data.image?.alt}
+                    fill
+                    ratio={3 / 2}
+                    priority
+                    className='w-full h-full'
+                    imgClassName='rounded-2xl'
+                    data-tina-field={tinaField(data, 'image')}
+                />
             </div>
         </section>
     )

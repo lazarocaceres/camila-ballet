@@ -44,11 +44,12 @@ export default function Cta({ data }) {
                                 </SmartLink>
                             </div>
                         </div>
-                        <div className='relative w-full lg:max-w-[700px] aspect-[3/2] self-stretch'>
+                        <div className='relative w-full lg:max-w-[700px] self-stretch'>
                             <Image
                                 src={data.image?.src}
                                 alt={data.image?.alt}
                                 fill
+                                ratio={3 / 2}
                                 className='w-full h-full'
                                 data-tina-field={tinaField(data, 'image')}
                             />

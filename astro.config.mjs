@@ -39,6 +39,13 @@ export default defineConfig({
     integrations: [mdx(), sitemap(), react(), tinaDirective()],
     vite: {
         plugins: [tailwindcss()],
+        resolve: { dedupe: ['react', 'react-dom'] },
+        build: {
+            target: 'es2020',
+            cssCodeSplit: true,
+            modulePreload: true,
+            sourcemap: false,
+        },
     },
     i18n,
     prefetch: {

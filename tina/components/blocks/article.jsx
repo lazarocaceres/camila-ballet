@@ -29,6 +29,7 @@ export default function Article({ data }) {
                                 src={src || url}
                                 alt={alt ?? ''}
                                 fill
+                                ratio={3 / 2}
                                 className='w-full h-full'
                             />
                         ),

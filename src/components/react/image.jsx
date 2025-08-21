@@ -37,6 +37,7 @@ export default function Image(props) {
         style,
         width,
         height,
+        ratio,
         quality = 75,
         priority = false,
         maxW = DEFAULT_MAX_W,
@@ -53,6 +54,37 @@ export default function Image(props) {
 
     // ---------- FILL ----------
     if (fill) {
+        let ar = undefined
+        if (
+            Number.isFinite(width) &&
+            Number.isFinite(height) &&
+            width > 0 &&
+            height > 0
+        ) {
+            ar = width / height
+        } else if (Number.isFinite(ratio) && ratio > 0) {
+            ar = ratio
+        }
+
+        if (!ar && isDev) {
+            console.warn(
+                '[Image] <Image fill> sin width/height ni ratio. Añade width/height o ratio para evitar CLS y mejorar LCP.',
+            )
+        }
+
+        const intrinsicW =
+            Number.isFinite(width) && width > 0
+                ? Math.round(width)
+                : ar
+                  ? 1000
+                  : undefined
+        const intrinsicH =
+            Number.isFinite(height) && height > 0
+                ? Math.round(height)
+                : ar && intrinsicW
+                  ? Math.round(intrinsicW / ar)
+                  : undefined
+
         const candidates = getCandidates(minW, maxW)
         const src0 = canOpt
             ? buildOptimizedUrl(src, candidates[0], quality)
@@ -67,17 +99,24 @@ export default function Image(props) {
         return (
             <span
                 className={className}
-                style={{ position: 'relative', display: 'block', ...style }}
+                style={{
+                    position: 'relative',
+                    display: 'block',
+                    ...(ar ? { aspectRatio: `${ar}` } : null),
+                    ...style,
+                }}
             >
                 <img
                     src={src0}
                     srcSet={srcSet}
                     sizes={sizesAttr}
                     alt={alt}
+                    decoding={priority ? 'auto' : 'async'}
                     loading={priority ? 'eager' : 'lazy'}
                     fetchPriority={priority ? 'high' : undefined}
-                    decoding='async'
                     className={imgClassName}
+                    width={intrinsicW}
+                    height={intrinsicH}
                     style={{
                         position: 'absolute',
                         inset: 0,
@@ -98,7 +137,7 @@ export default function Image(props) {
     if (!w) {
         if (isDev)
             console.warn(
-                '[Image] In non-fill mode, "width" is required to avoid CLS. Falling back to 800.',
+                '[Image] En non-fill, "width" es obligatorio. Usando 800 por defecto.',
             )
         w = 800
     }
@@ -126,9 +165,9 @@ export default function Image(props) {
             alt={alt}
             width={w}
             height={h}
+            decoding={priority ? 'auto' : 'async'}
             loading={priority ? 'eager' : 'lazy'}
             fetchPriority={priority ? 'high' : undefined}
-            decoding='async'
             className={imgClassName || className}
             style={{ ...aspectStyle }}
             {...rest}
