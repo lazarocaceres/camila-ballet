@@ -36,6 +36,9 @@ export default defineConfig({
     }),
     site: SITE_URL || `https://${VERCEL_URL}`,
     integrations: [mdx(), sitemap(), react(), tinaDirective()],
+    build: {
+        inlineStylesheets: 'always',
+    },
     vite: {
         plugins: [tailwindcss()],
         resolve: { dedupe: ['react', 'react-dom'] },

@@ -16,12 +16,12 @@ const globalData = await client.queries.global({ relativePath: `${locale}/global
         <BaseHead locale={locale} title={title ?? globalData.data.global.genericTitle} description={description ?? globalData.data.global.genericDescription} />
     </head>
     <body class='flex flex-col min-h-screen'>
-        <Header lang={locale} globalData={globalData} client:load />
+        <Header lang={locale} globalData={globalData} client:idle />
         <main class='flex-grow'>
             <slot />
         </main>
         <Footer globalData={globalData} client:tina />
 
-        <LanguageSwitcher locale={locale} pathname={pathname} client:load />
+        <LanguageSwitcher locale={locale} pathname={pathname} client:idle />
     </body>
 </html>

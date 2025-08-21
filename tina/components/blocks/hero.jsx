@@ -55,8 +55,7 @@ export default function Hero({ data }) {
                     data-aos-once='true'
                     src={data.image?.src}
                     alt={data.image?.alt}
-                    fill
-                    ratio={3 / 2}
+                    width={1472}
                     priority
                     className='w-full h-full'
                     imgClassName='rounded-2xl'
