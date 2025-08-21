@@ -1,106 +1,112 @@
-# Project Overview: Ultra-Fast Static Site with Astro, Edge-Driven i18n, and TinaCMS
+# 🌐 Project Overview: Ultra-Fast Static Site with Astro, Edge-Driven i18n, and TinaCMS
 
-## Executive Summary
+## 📑 Executive Summary
 
-This project delivers a **fully static** website built with **Astro**, served from the CDN, while language detection and routing are handled **at the edge** (Vercel Routing Middleware). Content is **business-editable** via **TinaCMS** (Git-backed). The result: **maximum performance**, predictable SEO, and a low-friction editorial workflow.
+This project delivers a **fully static** website built with **Astro**, served from the CDN, while language detection and routing are handled **at the edge** (Vercel Routing Middleware). Content is **business-editable** via **TinaCMS** (Git-backed).  
+The result: **maximum performance**, predictable SEO, and a low-friction editorial workflow.
 
 ---
 
-## Highlights
+## ✨ Highlights
 
-- **Performance**
+- ⚡ **Performance**
     - All HTML pages are **pre-rendered static**; assets are fingerprinted and long-cached.
-    - i18n is resolved **before** any HTML is served (Edge Middleware), with **no SSR** and **no extra client JS** for routing.
-    - Images are optimized; intrinsic `width`/`height` set to eliminate CLS.
+    - i18n resolved **before** HTML is served (Edge Middleware) → no SSR, no extra client JS.
+    - Images optimized with intrinsic `width`/`height` → no CLS.
 
-- **Edge i18n (deterministic & fast)**
+- 🌍 **Edge i18n (deterministic & fast)**
     - Detection priority: **cookie** → `Accept-Language` → **default locale**.
-    - **Sticky cookie** keeps users in their chosen language during navigation.
-    - Elegant explicit switch via `?lang=xx`; the middleware sets the cookie and **strips the param** on redirect.
-    - **Canonical default**: default locale is served **without** a URL prefix (configurable).
-    - Crawlers are not pointlessly redirected; canonical rules remain clean.
+    - **Sticky cookie** preserves chosen language.
+    - Explicit switch via `?lang=xx`; middleware normalizes and strips the param.
+    - **Canonical default** locale served **without** URL prefix.
+    - Crawlers get stable canonicals; no useless redirects.
 
-- **Content Editing (TinaCMS)**
+- 📝 **Content Editing (TinaCMS)**
     - In-repo content (Markdown/MDX/YAML/JSON) with instant preview.
-    - Low operational burden: no extra servers; PR-based workflow.
+    - PR-based workflow, no extra infra.
 
-- **SEO & Internationalization**
-    - Automatic **sitemaps** (with per-locale alternate links).
-    - Automatic **`<link rel="alternate" hreflang="…">`** across locales, including **`x-default`**.
-    - Automatic **web app manifests** per page/locale where needed.
-    - Clean canonicals, consistent URL design, and `Vary` only when appropriate.
+- 🔎 **SEO & Internationalization**
+    - Automatic sitemaps with `hreflang` alternates + `x-default`.
+    - Page-level `<link rel="alternate">` injection.
+    - Per-locale **web app manifests**.
+    - Clean canonicals, consistent URL design.
 
 ---
 
-## Architecture at a Glance
+## 🏗 Architecture at a Glance
 
-```mermaid
-flowchart LR
-  U[User] -->|Request| MW[Edge Middleware (i18n)]
-  MW -->|redirect if needed| CDN[CDN / Static Files]
-  CDN -->|Static HTML + assets| U
-  CMS[TinaCMS] --- Repo[(Content Repo)]
-  Dev[Developers] -->|Astro build| Dist[/static dist/]
-  Dist --> CDN
+```text
+ [User] ⇆ [CDN / Static Files] ⇆ [Dist (/static)]
+    │             ▲
+    │             │
+    ▼             │
+[Edge Middleware (i18n)]
+    │
+    └─── redirects / locale resolution
+
+[TinaCMS] ────┐
+              ▼
+        [Content Repo]
+              ▲
+              │
+        [Developers] → (Astro build) → [Dist]
 ```
 
 ---
 
-## Request Flow (Edge i18n)
+## 🔄 Request Flow (Edge i18n)
 
-1. **Matcher** runs only for HTML (assets/API bypass straight to CDN).
-2. If URL has **`?lang=xx`**:
-    - Set `locale=xx` cookie, normalize URL (add/remove prefix), **strip `?lang`**, and respond **307**.
+1. **Matcher** runs only for HTML (assets/API bypass CDN).
+2. URL with `?lang=xx` → set cookie, normalize, strip param, **307**.
+3. URL with locale prefix:
+    - Differs from cookie → **307** to sticky cookie locale.
+    - Equals default locale → **308** to prefix-less canonical.
+    - Else → pass through.
 
-3. If URL **has a locale prefix**:
-    - If it differs from the cookie (and a cookie exists): **307** to the cookie’s locale (**sticky**).
-    - If it equals the **default locale**: **308** to the **prefix-less** canonical path.
-    - Otherwise, pass through to the static file.
+4. URL without prefix:
+    - Users: **307** to best locale (if not default).
+    - Bots: serve default (prefix-less).
 
-4. If URL **has no prefix**:
-    - For users (not bots): **307** to the best locale when it’s not the default.
-    - For bots: serve the **default** without a prefix (avoids duplicate content).
-
-5. Query params (except `lang`) and the hash are preserved across redirects.
+5. Preserve query params (except `lang`) + hash.
 
 ---
 
-## Automation: Manifests, Sitemaps & Alternates
+## ⚙️ Automation: Manifests, Sitemaps & Alternates
 
-- **Sitemaps** are generated automatically for all pages and locales, with proper **`<xhtml:link rel="alternate" hreflang="…">`** entries and an **`x-default`** fallback.
-- **Page-level alternates** are injected automatically: each page outputs the full set of `hreflang` tags to interlink localized equivalents.
-- **Web App Manifests** are generated automatically per page/locale as needed (icons, theme, language, scope), keeping configuration DRY and consistent.
+- 🗺 **Sitemaps**: per-locale entries with alternates + `x-default`.
+- 🔗 **Hreflang tags**: auto-injected across localized equivalents.
+- 📱 **Web App Manifests**: per page/locale (icons, theme, language).
 
 ---
 
-## Performance Practices
+## 🚀 Performance Practices
 
-- **LCP** targeted under \~1.5s (4G fast); **CLS** near 0; minimal TTFB thanks to Edge decisioning + CDN.
-- **Images**: modern formats (WebP/AVIF), intrinsic dimensions, lazy where appropriate.
-- **CSS**: critical inline; remainder deferred; no heavy runtime frameworks.
-- **JS**: near-zero on most pages (only the language selector uses a tiny helper).
-- **Caching**
-    - HTML: CDN-controlled; middleware only varies when setting cookies/redirecting.
+- LCP < \~1.5s, CLS ≈ 0, minimal TTFB.
+- Images: WebP/AVIF, intrinsic dims, lazy where appropriate.
+- CSS: critical inline; rest deferred.
+- JS: near-zero (tiny helper for lang switcher).
+- Caching:
+    - HTML: CDN-controlled.
     - Assets: `Cache-Control: public, max-age=31536000, immutable`.
 
 ---
 
-## Editorial Workflow (TinaCMS)
+## 🖊 Editorial Workflow (TinaCMS)
 
-- Authors edit content visually; commits flow to the repo.
-- CI builds Astro to static output; Vercel deploys to the CDN.
-- Previews reflect the current locale (cookie aware) for accurate review.
-
----
-
-## Operational Notes
-
-- **Observability**: Edge logs capture redirect decisions (locale chosen, source of decision).
-- **Safety**: Cookie uses `SameSite=Lax` and `Secure` on HTTPS; no `HttpOnly` to allow optional client-side updates from the language picker.
-- **Flexibility**: “Sticky cookie” and “default without prefix” behaviors are feature-flag-friendly.
+- Authors edit visually → commits → repo.
+- CI builds Astro → static output → deploy via Vercel.
+- Previews locale-aware (cookie aware).
 
 ---
 
-## Outcome
+## 🔍 Operational Notes
 
-A site that **loads instantly**, **speaks the user’s language from the first byte**, and lets the business **edit anything** with confidence—while keeping infrastructure simple, costs low, and **SEO** / **international reach** first-class.
+- **Observability**: Edge logs track locale/redirect decisions.
+- **Safety**: Cookies `SameSite=Lax`, `Secure` (HTTPS).
+- **Flexibility**: Sticky cookie + prefix-less default are feature-flag-friendly.
+
+---
+
+## ✅ Outcome
+
+A site that **loads instantly**, **speaks the user’s language from the first byte**, and lets the business **edit anything** with confidence — while keeping infra simple, costs low, and SEO/international reach first-class.
