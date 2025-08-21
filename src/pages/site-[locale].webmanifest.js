@@ -5,8 +5,8 @@ export function getStaticPaths() {
     return i18n.locales.map(locale => ({ params: { locale } }))
 }
 
-const urlFor = (locale, defaultLocale, trailingSlash = false) =>
-    locale === defaultLocale ? '/' : `/${locale}` + (trailingSlash ? '/' : '')
+const urlFor = (locale, defaultLocale) =>
+    locale === defaultLocale ? '/' : `/${locale}`
 
 async function getGlobalForLocale(locale, defaultLocale) {
     const read = async loc => {
@@ -40,7 +40,7 @@ export async function GET({ params }) {
         description,
         lang: locale,
         start_url: urlFor(locale, defaultLocale),
-        scope: urlFor(locale, defaultLocale, true),
+        scope: urlFor(locale, defaultLocale),
         dir: 'ltr',
         display: 'standalone',
         background_color: '#ffffff',
