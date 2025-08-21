@@ -13,7 +13,7 @@ const RE_BOT =
 
 export const config = {
     matcher: [
-        '/((?!admin|api|_astro|assets|_image|\\.well-known|favicon\\.ico|robots\\.txt|sitemap\\.xml|.*\\.(?:png|jpe?g|webp|gif|svg|ico|css|js|mjs|map|woff2?|ttf|otf|eot|txt|xml|json|pdf|avif|heic|heif|mp4|webm|ogg|mp3|wav)).*)',
+        '/((?!api|_astro|assets|_image|\\.well-known|favicon\\.ico|robots\\.txt|sitemap\\.xml|.*\\.(?:png|jpe?g|webp|gif|svg|ico|css|js|mjs|map|woff2?|ttf|otf|eot|txt|xml|json|pdf|avif|heic|heif|mp4|webm|ogg|mp3|wav)).*)',
     ],
 }
 
@@ -54,6 +54,16 @@ export default function middleware(request) {
     const original = new URL(request.url)
     const url = new URL(request.url)
     const path = clean(url.pathname)
+
+    if (path === '/admin' || path.startsWith('/admin/')) {
+        return next()
+    }
+
+    const referer = request.headers.get('referer') || ''
+    if (referer.includes('/admin')) {
+        return next()
+    }
+
     const originalSearch = original.search
     const originalHash = original.hash
 
@@ -66,8 +76,18 @@ export default function middleware(request) {
     const seg = lc(seg0(path))
     const hasPrefix = LOCALES.has(seg)
 
-    const chosen = lc(url.searchParams.get(LANG_PARAM))
+    const rawChosen = lc(url.searchParams.get(LANG_PARAM))
+    const chosen = rawChosen ? rawChosen.split('-')[0] : ''
     const hasChosen = chosen && LOCALES.has(chosen)
+
+    const withHeaders = (status, { location, cookieValue, vary = true }) => {
+        const headers = new Headers()
+        if (location) headers.set('Location', location)
+        if (cookieValue) headers.set('Set-Cookie', cookieValue)
+        if (vary) headers.set('Vary', 'Accept-Language, Cookie')
+        return new Response(null, { status, headers })
+    }
+
     if (hasChosen) {
         url.searchParams.delete(LANG_PARAM)
         const cleanSearch = url.search || ''
@@ -80,16 +100,12 @@ export default function middleware(request) {
               : withLocale(path, chosen)
 
         if (targetPath !== path || cleanSearch !== originalSearch) {
-            return new Response(null, {
-                status: 307,
-                headers: {
-                    Location: targetPath + cleanSearch + (originalHash || ''),
-                    'Set-Cookie':
-                        cookie !== chosen
-                            ? setCookie(COOKIE, chosen, url)
-                            : undefined,
-                    Vary: 'Accept-Language, Cookie',
-                },
+            return withHeaders(307, {
+                location: targetPath + cleanSearch + (originalHash || ''),
+                cookieValue:
+                    cookie !== chosen
+                        ? setCookie(COOKIE, chosen, url)
+                        : undefined,
             })
         }
 
@@ -102,18 +118,15 @@ export default function middleware(request) {
     }
 
     const best = pickBest(cookie, acceptLang)
+
     if (hasPrefix) {
         if (cookie && LOCALES.has(cookie) && cookie !== seg) {
-            return new Response(null, {
-                status: 307,
-                headers: {
-                    Location:
-                        withLocale(withoutLocale(path), cookie) +
-                        originalSearch +
-                        (originalHash || ''),
-                    'Set-Cookie': setCookie(COOKIE, cookie, url),
-                    Vary: 'Accept-Language, Cookie',
-                },
+            return withHeaders(307, {
+                location:
+                    withLocale(withoutLocale(path), cookie) +
+                    originalSearch +
+                    (originalHash || ''),
+                cookieValue: setCookie(COOKIE, cookie, url),
             })
         }
 
@@ -124,16 +137,12 @@ export default function middleware(request) {
                 target !==
                 original.pathname + original.search + (originalHash || '')
             ) {
-                return new Response(null, {
-                    status: 308,
-                    headers: {
-                        Location: target,
-                        'Set-Cookie':
-                            cookie !== DEFAULT
-                                ? setCookie(COOKIE, DEFAULT, url)
-                                : undefined,
-                        Vary: 'Accept-Language, Cookie',
-                    },
+                return withHeaders(308, {
+                    location: target,
+                    cookieValue:
+                        cookie !== DEFAULT
+                            ? setCookie(COOKIE, DEFAULT, url)
+                            : undefined,
                 })
             }
         }
@@ -148,19 +157,15 @@ export default function middleware(request) {
 
     const targetLocale = cookie && LOCALES.has(cookie) ? cookie : best
     if (!isBot && targetLocale !== DEFAULT) {
-        return new Response(null, {
-            status: 307,
-            headers: {
-                Location:
-                    withLocale(path, targetLocale) +
-                    originalSearch +
-                    (originalHash || ''),
-                'Set-Cookie':
-                    cookie !== targetLocale
-                        ? setCookie(COOKIE, targetLocale, url)
-                        : undefined,
-                Vary: 'Accept-Language, Cookie',
-            },
+        return withHeaders(307, {
+            location:
+                withLocale(path, targetLocale) +
+                originalSearch +
+                (originalHash || ''),
+            cookieValue:
+                cookie !== targetLocale
+                    ? setCookie(COOKIE, targetLocale, url)
+                    : undefined,
         })
     }
 
