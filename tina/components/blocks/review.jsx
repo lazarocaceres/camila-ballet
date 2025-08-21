@@ -25,6 +25,7 @@ export default function Review({ data }) {
                             src={data.authorPicture?.src}
                             alt={data.authorPicture?.alt}
                             width={60}
+                            height={60}
                             className='w-full max-w-[60px] rounded-full'
                             data-tina-field={tinaField(data, 'authorPicture')}
                         />
@@ -51,6 +52,7 @@ export default function Review({ data }) {
                             src={data.authorCompanyPicture?.src}
                             alt={data.authorCompanyPicture?.alt}
                             width={180}
+                            height={100}
                             className='w-full max-w-[180px]'
                             data-tina-field={tinaField(
                                 data,
