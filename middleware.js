@@ -74,21 +74,31 @@ const pickBest = (cookieLocale, acceptHeader) => {
     return DEFAULT
 }
 
-const respond = (status, location, cookieValue, vary = true, cacheSeconds) => {
-    const headers = {}
-    if (location) headers['Location'] = location
-    if (cookieValue) {
-        headers['Set-Cookie'] = cookieValue
-    } else {
-        headers['Cache-Control'] =
-            'public, s-maxage=600, max-age=600, stale-while-revalidate=30'
-    }
+const respondRedirectUser = (status, location, cookieValue, vary = true) => {
+    const headers = { Location: location }
+    if (cookieValue) headers['Set-Cookie'] = cookieValue
     if (vary) headers['Vary'] = 'Accept-Language, Cookie'
-    if (location && cacheSeconds) {
-        headers['Cache-Control'] =
-            `public, s-maxage=${cacheSeconds}, max-age=${cacheSeconds}${cacheSeconds >= 31536000 ? ', immutable' : ''}`
-    }
+    headers['Cache-Control'] = 'private, no-store'
     return new Response(null, { status, headers })
+}
+
+const respondRedirectStatic = (status, location, cacheSeconds) => {
+    const headers = { Location: location }
+    headers['Cache-Control'] =
+        `public, s-maxage=${cacheSeconds}, max-age=${cacheSeconds}${cacheSeconds >= 31536000 ? ', immutable' : ''}`
+    return new Response(null, { status, headers })
+}
+
+const passNext = cookieValue => {
+    if (cookieValue) {
+        return next({
+            headers: {
+                'Set-Cookie': cookieValue,
+                Vary: 'Accept-Language, Cookie',
+            },
+        })
+    }
+    return next({ headers: { Vary: 'Accept-Language, Cookie' } })
 }
 
 export default function middleware(request) {
@@ -131,21 +141,13 @@ export default function middleware(request) {
             const loc = targetPath + cleanSearch + (originalHash || '')
             const sc =
                 cookie !== chosen ? setCookie(chosen, isHttps) : undefined
-
-            return respond(307, loc, sc, true, 300)
+            return respondRedirectUser(307, loc, sc, true)
         }
         if (cookie !== chosen) {
-            return next({
-                headers: {
-                    'Set-Cookie': setCookie(chosen, isHttps),
-                    Vary: 'Accept-Language, Cookie',
-                },
-            })
+            return passNext(setCookie(chosen, isHttps))
         }
-        return next({ headers: { Vary: 'Accept-Language, Cookie' } })
+        return passNext()
     }
-
-    const best = pickBest(cookie, acceptLang)
 
     if (hasPrefix) {
         if (!isBot && cookie && LOCALES.has(cookie) && cookie !== seg) {
@@ -153,7 +155,12 @@ export default function middleware(request) {
                 withLocale(withoutLocale(path), cookie) +
                 originalSearch +
                 (originalHash || '')
-            return respond(307, loc, setCookie(cookie, isHttps), true, 600)
+            return respondRedirectUser(
+                307,
+                loc,
+                setCookie(cookie, isHttps),
+                true,
+            )
         }
 
         if (seg === DEFAULT) {
@@ -161,25 +168,19 @@ export default function middleware(request) {
                 withoutLocale(path) + originalSearch + (originalHash || '')
             const current = url.pathname + url.search + (originalHash || '')
             if (target !== current) {
-                const sc =
-                    cookie !== DEFAULT ? setCookie(DEFAULT, isHttps) : undefined
-
-                return respond(308, target, sc, true, 31536000)
+                return respondRedirectStatic(308, target, 31536000)
             }
         }
 
         if (!cookie || cookie !== seg) {
-            return next({
-                headers: {
-                    'Set-Cookie': setCookie(seg, isHttps),
-                    Vary: 'Accept-Language, Cookie',
-                },
-            })
+            return passNext(setCookie(seg, isHttps))
         }
-        return next({ headers: { Vary: 'Accept-Language, Cookie' } })
+        return passNext()
     }
 
+    const best = pickBest(cookie, acceptLang)
     const targetLocale = cookie && LOCALES.has(cookie) ? cookie : best
+
     if (!isBot && targetLocale !== DEFAULT) {
         const loc =
             withLocale(path, targetLocale) +
@@ -189,9 +190,8 @@ export default function middleware(request) {
             cookie !== targetLocale
                 ? setCookie(targetLocale, isHttps)
                 : undefined
-
-        return respond(307, loc, sc, true, 600)
+        return respondRedirectUser(307, loc, sc, true)
     }
 
-    return next({ headers: { Vary: 'Accept-Language, Cookie' } })
+    return passNext()
 }
