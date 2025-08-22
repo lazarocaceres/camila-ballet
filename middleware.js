@@ -44,14 +44,23 @@ const getCookie = cookieHeader => {
     if (!cookieHeader) return ''
     const m = RE_COOKIE.exec(cookieHeader)
     if (!m) return ''
-    const v = m[1]
-    return v.includes('%') ? decodeURIComponent(v) : v
+    let v = m[1]
+    if (v.includes('%')) {
+        try {
+            v = decodeURIComponent(v)
+        } catch {}
+    }
+    v = v.trim()
+    if (v.startsWith('/')) v = v.slice(1)
+    const dash = v.indexOf('-')
+    if (dash > 0) v = v.slice(0, dash)
+    return v.toLowerCase()
 }
 const setCookie = (value, isHttps) =>
     `${COOKIE}=${encodeURIComponent(value)}; Path=/; Max-Age=${COOKIE_MAX_AGE}; SameSite=Lax${isHttps ? '; Secure' : ''}`
 
 const pickBest = (cookieLocale, acceptHeader) => {
-    const c = lc(cookieLocale)
+    const c = cookieLocale
     if (c && LOCALE_SET.has(c)) return c
     if (acceptHeader) {
         const parts = acceptHeader.split(',')
@@ -84,8 +93,7 @@ const redirectStatic308 = (location, seconds) =>
             'Cache-Control': `public, s-maxage=${seconds}, max-age=${seconds}, immutable`,
         },
     })
-const pass = cookieValue =>
-    cookieValue ? next({ headers: { 'Set-Cookie': cookieValue } }) : next()
+const pass = () => next()
 
 export default function middleware(request) {
     const url = new URL(request.url)
@@ -109,7 +117,7 @@ export default function middleware(request) {
 
     const cookieHeader = request.headers.get('cookie') || ''
     const acceptLang = request.headers.get('accept-language') || ''
-    const cookie = lc(getCookie(cookieHeader))
+    const cookie = getCookie(cookieHeader)
 
     if (hasPrefix) {
         if (seg === DEFAULT) {
@@ -121,7 +129,6 @@ export default function middleware(request) {
                 return redirectStatic308(target, 31536000)
             }
         }
-        if (cookie !== seg) return pass(setCookie(seg, isHttps))
         return pass()
     }
 
