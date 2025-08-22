@@ -35,9 +35,8 @@ export default function LanguageSwitcher({ locale, pathname: path }) {
     }, [])
 
     const buildHref = code => {
-        const isDefault = code === i18n.defaultLocale
-        const base = isDefault ? pathname || '/' : `/${code}${pathname || ''}`
-        return `${base}?lang=${encodeURIComponent(code)}`
+        const path = pathname || '/'
+        return path === '/' ? `/${code}` : `/${code}${path}`
     }
 
     return (
