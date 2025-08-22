@@ -1,5 +1,5 @@
 import { next } from '@vercel/functions'
-import { i18n as I18N } from './i18n'
+import { i18n as I18N } from './i18n.js'
 
 const COOKIE = 'locale'
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365
@@ -10,7 +10,7 @@ const DEFAULT = I18N.defaultLocale.toLowerCase()
 
 const RE_BOT =
     /(Googlebot|Google-InspectionTool|AdsBot-Google|AdsBot-Google-Mobile|AdsBot-Google-Mobile-Apps|Googlebot-Image|Googlebot-News|GoogleOther|GoogleReadAloud|Mediapartners-Google|APIs-Google|bingbot|BingPreview|DuckDuckBot|Baiduspider|YandexBot|YandexImages|Yandex|Applebot|SemrushBot|AhrefsBot|DotBot|MJ12bot|CCBot|PetalBot|Bytespider|Sogou|SogouSpider|Sogou web spider|SeznamBot|Qwantify|NaverBot|facebot|facebookexternalhit|FacebookBot|FacebookCatalog|Twitterbot|LinkedInBot|Slackbot|Discordbot|TelegramBot|Quora Link Preview|SkypeUriPreview|Embedly|rogerbot|SiteAuditBot|W3C_Validator|validator\.nu|Chrome-Lighthouse|Lighthouse|Page Speed|GTmetrix|Pingdom|Screaming Frog|GPTBot|ClaudeBot|PerplexityBot|YouBot|Amazonbot|HeadlessChrome|PhantomJS|curl|wget)/i
-const RE_COOKIE = new RegExp('(?:^|; )' + COOKIE + '=([^;]*)')
+const RE_COOKIE = new RegExp('(?:^|;\\s*)' + COOKIE + '=([^;]*)')
 
 export const config = {
     matcher: [
@@ -74,7 +74,7 @@ const pickBest = (cookieLocale, acceptHeader) => {
     return DEFAULT
 }
 
-const respond = (status, location, cookieValue, vary = true) => {
+const respond = (status, location, cookieValue, vary = true, cacheSeconds) => {
     const headers = {}
     if (location) headers['Location'] = location
     if (cookieValue) {
@@ -84,6 +84,10 @@ const respond = (status, location, cookieValue, vary = true) => {
             'public, s-maxage=600, max-age=600, stale-while-revalidate=30'
     }
     if (vary) headers['Vary'] = 'Accept-Language, Cookie'
+    if (location && cacheSeconds) {
+        headers['Cache-Control'] =
+            `public, s-maxage=${cacheSeconds}, max-age=${cacheSeconds}${cacheSeconds >= 31536000 ? ', immutable' : ''}`
+    }
     return new Response(null, { status, headers })
 }
 
@@ -127,25 +131,29 @@ export default function middleware(request) {
             const loc = targetPath + cleanSearch + (originalHash || '')
             const sc =
                 cookie !== chosen ? setCookie(chosen, isHttps) : undefined
-            return respond(307, loc, sc)
+
+            return respond(307, loc, sc, true, 300)
         }
         if (cookie !== chosen) {
             return next({
-                headers: { 'Set-Cookie': setCookie(chosen, isHttps) },
+                headers: {
+                    'Set-Cookie': setCookie(chosen, isHttps),
+                    Vary: 'Accept-Language, Cookie',
+                },
             })
         }
-        return next()
+        return next({ headers: { Vary: 'Accept-Language, Cookie' } })
     }
 
     const best = pickBest(cookie, acceptLang)
 
     if (hasPrefix) {
-        if (cookie && LOCALES.has(cookie) && cookie !== seg) {
+        if (!isBot && cookie && LOCALES.has(cookie) && cookie !== seg) {
             const loc =
                 withLocale(withoutLocale(path), cookie) +
                 originalSearch +
                 (originalHash || '')
-            return respond(307, loc, setCookie(cookie, isHttps))
+            return respond(307, loc, setCookie(cookie, isHttps), true, 600)
         }
 
         if (seg === DEFAULT) {
@@ -155,14 +163,20 @@ export default function middleware(request) {
             if (target !== current) {
                 const sc =
                     cookie !== DEFAULT ? setCookie(DEFAULT, isHttps) : undefined
-                return respond(308, target, sc)
+
+                return respond(308, target, sc, true, 31536000)
             }
         }
 
         if (!cookie || cookie !== seg) {
-            return next({ headers: { 'Set-Cookie': setCookie(seg, isHttps) } })
+            return next({
+                headers: {
+                    'Set-Cookie': setCookie(seg, isHttps),
+                    Vary: 'Accept-Language, Cookie',
+                },
+            })
         }
-        return next()
+        return next({ headers: { Vary: 'Accept-Language, Cookie' } })
     }
 
     const targetLocale = cookie && LOCALES.has(cookie) ? cookie : best
@@ -175,8 +189,9 @@ export default function middleware(request) {
             cookie !== targetLocale
                 ? setCookie(targetLocale, isHttps)
                 : undefined
-        return respond(307, loc, sc)
+
+        return respond(307, loc, sc, true, 600)
     }
 
-    return next()
+    return next({ headers: { Vary: 'Accept-Language, Cookie' } })
 }
