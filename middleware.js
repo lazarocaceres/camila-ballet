@@ -93,7 +93,12 @@ const redirectStatic308 = (location, seconds) =>
             'Cache-Control': `public, s-maxage=${seconds}, max-age=${seconds}, immutable`,
         },
     })
-const pass = () => next()
+
+const pass = cookieValue => {
+    const res = next()
+    if (cookieValue) res.headers.append('Set-Cookie', cookieValue)
+    return res
+}
 
 export default function middleware(request) {
     const url = new URL(request.url)
@@ -129,6 +134,7 @@ export default function middleware(request) {
                 return redirectStatic308(target, 31536000)
             }
         }
+        if (cookie !== seg) return pass(setCookie(seg, isHttps))
         return pass()
     }
 
