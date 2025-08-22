@@ -2,7 +2,7 @@ import { next } from '@vercel/functions'
 import { i18n as I18N } from './i18n.js'
 
 const COOKIE = 'locale'
-const COOKIE_MAX_AGE = 31536000
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 
 const LOCALES = new Set(I18N.locales.map(s => s.toLowerCase()))
 const DEFAULT = I18N.defaultLocale.toLowerCase()
@@ -92,8 +92,15 @@ const respondRedirectStatic = (status, location, cacheSeconds) => {
     return new Response(null, { status, headers })
 }
 const passNext = cookieValue => {
-    if (cookieValue) return next({ headers: { 'Set-Cookie': cookieValue } })
-    return next()
+    if (cookieValue) {
+        return next({
+            headers: {
+                'Set-Cookie': cookieValue,
+                Vary: 'Accept-Language, Cookie',
+            },
+        })
+    }
+    return next({ headers: { Vary: 'Accept-Language, Cookie' } })
 }
 
 export default function middleware(request) {
@@ -140,9 +147,14 @@ export default function middleware(request) {
     }
 
     const best = pickBest(cookie, acceptLang)
-    if (best && best !== DEFAULT) {
-        const loc = withLocale(path, best) + q + h
-        const sc = cookie !== best ? setCookie(best, isHttps) : undefined
+    const targetLocale = cookie && LOCALES.has(cookie) ? cookie : best
+
+    if (targetLocale !== DEFAULT) {
+        const loc = withLocale(path, targetLocale) + q + h
+        const sc =
+            cookie !== targetLocale
+                ? setCookie(targetLocale, isHttps)
+                : undefined
         return respondRedirectUser(307, loc, sc)
     }
 
