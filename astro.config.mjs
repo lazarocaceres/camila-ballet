@@ -50,9 +50,16 @@ export default defineConfig({
                     passes: 3,
                     drop_console: true,
                     drop_debugger: true,
+                    dead_code: true,
+                    pure_funcs: ['console.info', 'console.debug'],
+                    booleans_as_integers: true,
                 },
-                mangle: true,
-                format: { comments: false },
+                mangle: {
+                    toplevel: true,
+                },
+                format: {
+                    comments: false,
+                },
                 safari10: false,
             },
             sourcemap: false,

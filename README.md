@@ -83,7 +83,7 @@ The result: **maximum performance**, predictable SEO, and a low-friction editori
 
 - LCP < \~1.5s, CLS ≈ 0, minimal TTFB.
 - Images: WebP/AVIF, intrinsic dims, lazy where appropriate.
-- CSS: critical inline; rest deferred.
+- All CSS inline (styles are small enough to justify inlining everything).
 - JS: near-zero (tiny helper for lang switcher).
 - Caching:
     - HTML: CDN-controlled.
