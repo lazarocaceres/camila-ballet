@@ -4,8 +4,7 @@ import { i18n as I18N } from './i18n.js'
 const COOKIE = 'locale'
 const COOKIE_MAX_AGE = 31536000
 
-const LOCALES = I18N.locales.map(s => s.toLowerCase())
-const LOCALE_SET = new Set(LOCALES)
+const LOCALES = new Set(I18N.locales.map(s => s.toLowerCase()))
 const DEFAULT = I18N.defaultLocale.toLowerCase()
 
 export const config = {
@@ -15,8 +14,8 @@ export const config = {
 }
 
 const RE_BOT =
-    /(google|bing|duckduckbot|yandex|baidu|semrush|ahrefs|facebook|twitter|linkedin|slack|discord|telegram|validator|lighthouse|gtmetrix|pingdom|curl|wget|headless|phantom|bot)/i
-const RE_COOKIE = new RegExp('(?:^|;\\s*)' + COOKIE + '=([^;]*)', 'i')
+    /(Googlebot|Google-InspectionTool|AdsBot-Google|AdsBot-Google-Mobile|AdsBot-Google-Mobile-Apps|Googlebot-Image|Googlebot-News|GoogleOther|GoogleReadAloud|Mediapartners-Google|APIs-Google|bingbot|BingPreview|DuckDuckBot|Baiduspider|YandexBot|YandexImages|Yandex|Applebot|SemrushBot|AhrefsBot|DotBot|MJ12bot|CCBot|PetalBot|Bytespider|Sogou|SogouSpider|Sogou web spider|SeznamBot|Qwantify|NaverBot|facebot|facebookexternalhit|FacebookBot|FacebookCatalog|Twitterbot|LinkedInBot|Slackbot|Discordbot|TelegramBot|Quora Link Preview|SkypeUriPreview|Embedly|rogerbot|SiteAuditBot|W3C_Validator|validator\.nu|Chrome-Lighthouse|Lighthouse|Page Speed|GTmetrix|Pingdom|Screaming Frog|GPTBot|ClaudeBot|PerplexityBot|YouBot|Amazonbot|HeadlessChrome|PhantomJS|curl|wget)/i
+const RE_COOKIE = new RegExp('(?:^|;\\s*)' + COOKIE + '=([^;]*)')
 
 const lc = s => (typeof s === 'string' ? s.toLowerCase() : '')
 const clean = p => {
@@ -60,8 +59,8 @@ const setCookie = (value, isHttps) =>
     `${COOKIE}=${encodeURIComponent(value)}; Path=/; Max-Age=${COOKIE_MAX_AGE}; SameSite=Lax${isHttps ? '; Secure' : ''}`
 
 const pickBest = (cookieLocale, acceptHeader) => {
-    const c = cookieLocale
-    if (c && LOCALE_SET.has(c)) return c
+    const c = lc(cookieLocale)
+    if (c && LOCALES.has(c)) return c
     if (acceptHeader) {
         const parts = acceptHeader.split(',')
         for (let i = 0; i < parts.length; i++) {
@@ -69,35 +68,32 @@ const pickBest = (cookieLocale, acceptHeader) => {
             const semi = s.indexOf(';')
             const tag = lc(semi === -1 ? s.trim() : s.slice(0, semi).trim())
             if (!tag || tag === '*') continue
-            if (LOCALE_SET.has(tag)) return tag
+            if (LOCALES.has(tag)) return tag
             const dash = tag.indexOf('-')
             if (dash > 0) {
                 const base = tag.slice(0, dash)
-                if (LOCALE_SET.has(base)) return base
+                if (LOCALES.has(base)) return base
             }
         }
     }
     return DEFAULT
 }
 
-const redirectUser307 = (location, cookieValue) => {
+const respondRedirectUser = (status, location, cookieValue) => {
     const headers = { Location: location, 'Cache-Control': 'private, no-store' }
     if (cookieValue) headers['Set-Cookie'] = cookieValue
-    return new Response(null, { status: 307, headers })
+    return new Response(null, { status, headers })
 }
-const redirectStatic308 = (location, seconds) =>
-    new Response(null, {
-        status: 308,
-        headers: {
-            Location: location,
-            'Cache-Control': `public, s-maxage=${seconds}, max-age=${seconds}, immutable`,
-        },
-    })
-
-const pass = cookieValue => {
-    const res = next()
-    if (cookieValue) res.headers.append('Set-Cookie', cookieValue)
-    return res
+const respondRedirectStatic = (status, location, cacheSeconds) => {
+    const headers = {
+        Location: location,
+        'Cache-Control': `public, s-maxage=${cacheSeconds}, max-age=${cacheSeconds}${cacheSeconds >= 31536000 ? ', immutable' : ''}`,
+    }
+    return new Response(null, { status, headers })
+}
+const passNext = cookieValue => {
+    if (cookieValue) return next({ headers: { 'Set-Cookie': cookieValue } })
+    return next()
 }
 
 export default function middleware(request) {
@@ -106,23 +102,25 @@ export default function middleware(request) {
     const path = clean(url.pathname)
 
     const ua = request.headers.get('user-agent') || ''
+    const cookieHeader = request.headers.get('cookie') || ''
+    const acceptLang = request.headers.get('accept-language') || ''
     const q = url.search || ''
     const h = url.hash || ''
-    const seg = lc(seg0(path))
-    const hasPrefix = LOCALE_SET.has(seg)
 
-    if (RE_BOT.test(ua)) {
+    const isBot = RE_BOT.test(ua)
+    const cookie = getCookie(cookieHeader)
+    const seg = lc(seg0(path))
+    const hasPrefix = LOCALES.has(seg)
+
+    if (isBot) {
         if (hasPrefix && seg === DEFAULT) {
             const target = withoutLocale(path) + q + h
             const current = url.pathname + q + h
-            if (target !== current) return redirectStatic308(target, 31536000)
+            if (target !== current)
+                return respondRedirectStatic(308, target, 31536000)
         }
         return next()
     }
-
-    const cookieHeader = request.headers.get('cookie') || ''
-    const acceptLang = request.headers.get('accept-language') || ''
-    const cookie = getCookie(cookieHeader)
 
     if (hasPrefix) {
         if (seg === DEFAULT) {
@@ -130,20 +128,23 @@ export default function middleware(request) {
             const current = url.pathname + q + h
             if (target !== current) {
                 if (cookie !== DEFAULT)
-                    return redirectUser307(target, setCookie(DEFAULT, isHttps))
-                return redirectStatic308(target, 31536000)
+                    return respondRedirectUser(
+                        307,
+                        target,
+                        setCookie(DEFAULT, isHttps),
+                    )
+                return respondRedirectStatic(308, target, 31536000)
             }
         }
-        if (cookie !== seg) return pass(setCookie(seg, isHttps))
-        return pass()
+        return passNext(cookie !== seg ? setCookie(seg, isHttps) : undefined)
     }
 
     const best = pickBest(cookie, acceptLang)
     if (best && best !== DEFAULT) {
         const loc = withLocale(path, best) + q + h
         const sc = cookie !== best ? setCookie(best, isHttps) : undefined
-        return redirectUser307(loc, sc)
+        return respondRedirectUser(307, loc, sc)
     }
 
-    return pass()
+    return passNext()
 }
