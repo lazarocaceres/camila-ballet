@@ -30,19 +30,19 @@ const clean = p => {
     return a > b ? '/' : '/' + p.slice(a, b + 1)
 }
 
-const seg0 = p => {
-    const c = clean(p)
+const seg0Clean = c => {
     if (c === '/') return ''
     const n = c.indexOf('/', 1)
     return n === -1 ? c.slice(1) : c.slice(1, n)
 }
 
-const withLocale = (p, l) => (clean(p) === '/' ? `/${l}` : `/${l}${clean(p)}`)
-const withoutLocale = p => {
-    const c = clean(p)
-    if (c === '/') return '/'
-    const n = c.indexOf('/', 1)
-    return n === -1 ? '/' : c.slice(n)
+const withLocaleClean = (cleanPath, l) =>
+    cleanPath === '/' ? `/${l}` : `/${l}${cleanPath}`
+
+const withoutLocaleClean = cleanPath => {
+    if (cleanPath === '/') return '/'
+    const n = cleanPath.indexOf('/', 1)
+    return n === -1 ? '/' : cleanPath.slice(n)
 }
 
 const getCookie = cookieHeader => {
@@ -54,20 +54,29 @@ const getCookie = cookieHeader => {
 const setCookie = (value, isHttps) =>
     `${COOKIE}=${encodeURIComponent(value)}; Path=/; Max-Age=${COOKIE_MAX_AGE}; SameSite=Lax${isHttps ? '; Secure' : ''}`
 
+const parseAL = h =>
+    h
+        .split(',')
+        .map((raw, i) => {
+            const [lang, ...params] = raw.trim().split(';')
+            const q = params.reduce((acc, p) => {
+                const [k, v] = p.split('=').map(s => s.trim())
+                return k === 'q' ? parseFloat(v) || 0 : acc
+            }, 1)
+            return { lang: lc(lang), q, i }
+        })
+        .filter(x => x.lang && x.lang !== '*')
+        .sort((a, b) => b.q - a.q || a.i - b.i)
+
 const pickBest = (cookieLocale, acceptHeader) => {
     const c = lc(cookieLocale)
     if (c && LOCALES.has(c)) return c
     if (acceptHeader) {
-        const parts = acceptHeader.split(',')
-        for (let i = 0; i < parts.length; i++) {
-            const s = parts[i]
-            const semi = s.indexOf(';')
-            const tag = lc(semi === -1 ? s.trim() : s.slice(0, semi).trim())
-            if (!tag || tag === '*') continue
-            if (LOCALES.has(tag)) return tag
-            const dash = tag.indexOf('-')
+        for (const { lang } of parseAL(acceptHeader)) {
+            if (LOCALES.has(lang)) return lang
+            const dash = lang.indexOf('-')
             if (dash > 0) {
-                const base = tag.slice(0, dash)
+                const base = lang.slice(0, dash)
                 if (LOCALES.has(base)) return base
             }
         }
@@ -90,21 +99,15 @@ const respondRedirectStatic = (status, location, cacheSeconds) => {
     return new Response(null, { status, headers })
 }
 
-const passNext = cookieValue => {
-    if (cookieValue) {
-        return next({
-            headers: {
-                'Set-Cookie': cookieValue,
-                Vary: 'Accept-Language, Cookie',
-            },
-        })
-    }
-    return next({ headers: { Vary: 'Accept-Language, Cookie' } })
-}
+const passNext = () => next()
 
 export default function middleware(request) {
     const url = new URL(request.url)
-    const isHttps = url.protocol === 'https:'
+    const xfProto = request.headers.get('x-forwarded-proto')
+    const isHttps =
+        (xfProto
+            ? xfProto.split(',')[0].trim()
+            : url.protocol.replace(':', '')) === 'https'
     const path = clean(url.pathname)
 
     if (path === '/admin' || path.startsWith('/admin/')) return next()
@@ -120,7 +123,7 @@ export default function middleware(request) {
     const isBot = RE_BOT.test(ua)
 
     const cookie = lc(getCookie(cookieHeader))
-    const seg = lc(seg0(path))
+    const seg = lc(seg0Clean(path))
     const hasPrefix = LOCALES.has(seg)
 
     const rawChosen = url.searchParams.get(LANG_PARAM)
@@ -133,10 +136,10 @@ export default function middleware(request) {
         const targetPath = hasPrefix
             ? seg === chosen
                 ? path
-                : withLocale(withoutLocale(path), chosen)
+                : withLocaleClean(withoutLocaleClean(path), chosen)
             : chosen === DEFAULT
               ? path
-              : withLocale(path, chosen)
+              : withLocaleClean(path, chosen)
 
         if (targetPath !== path || cleanSearch !== originalSearch) {
             const loc = targetPath + cleanSearch + (originalHash || '')
@@ -145,7 +148,16 @@ export default function middleware(request) {
             return respondRedirectUser(307, loc, sc, true)
         }
         if (cookie !== chosen) {
-            return passNext(setCookie(chosen, isHttps))
+            if (!isBot) {
+                const loc = path + (originalSearch || '') + (originalHash || '')
+                return respondRedirectUser(
+                    307,
+                    loc,
+                    setCookie(chosen, isHttps),
+                    true,
+                )
+            }
+            return passNext()
         }
         return passNext()
     }
@@ -153,7 +165,7 @@ export default function middleware(request) {
     if (hasPrefix) {
         if (!isBot && cookie && LOCALES.has(cookie) && cookie !== seg) {
             const loc =
-                withLocale(withoutLocale(path), cookie) +
+                withLocaleClean(withoutLocaleClean(path), cookie) +
                 originalSearch +
                 (originalHash || '')
             return respondRedirectUser(
@@ -166,7 +178,7 @@ export default function middleware(request) {
 
         if (seg === DEFAULT) {
             const target =
-                withoutLocale(path) + originalSearch + (originalHash || '')
+                withoutLocaleClean(path) + originalSearch + (originalHash || '')
             const current = url.pathname + url.search + (originalHash || '')
             if (target !== current) {
                 return respondRedirectStatic(308, target, 31536000)
@@ -174,7 +186,16 @@ export default function middleware(request) {
         }
 
         if (!cookie || cookie !== seg) {
-            return passNext(setCookie(seg, isHttps))
+            if (!isBot) {
+                const loc = path + (originalSearch || '') + (originalHash || '')
+                return respondRedirectUser(
+                    307,
+                    loc,
+                    setCookie(seg, isHttps),
+                    true,
+                )
+            }
+            return passNext()
         }
         return passNext()
     }
@@ -184,7 +205,7 @@ export default function middleware(request) {
 
     if (!isBot && targetLocale !== DEFAULT) {
         const loc =
-            withLocale(path, targetLocale) +
+            withLocaleClean(path, targetLocale) +
             originalSearch +
             (originalHash || '')
         const sc =
