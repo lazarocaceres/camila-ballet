@@ -14,9 +14,7 @@ const RE_COOKIE = new RegExp('(?:^|;\\s*)' + COOKIE + '=([^;]*)')
 
 export const config = {
     runtime: 'edge',
-    matcher: [
-        '/((?!api|_astro|assets|_image|\\.well-known|favicon\\.ico|robots\\.txt|sitemap\\.xml|.*\\.(?:png|jpe?g|webp|gif|svg|ico|css|js|mjs|map|woff2?|ttf|otf|eot|txt|xml|json|pdf|avif|heic|heif|mp4|webm|ogg|mp3|wav)).*)',
-    ],
+    matcher: '/((?!_astro|api).*)',
 }
 
 const lc = s => (typeof s === 'string' ? s.toLowerCase() : '')
