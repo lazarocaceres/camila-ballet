@@ -13,13 +13,18 @@ Fully static **Astro** site served from the CDN. Language is resolved **at the e
     - Language resolved at the edge → no SSR and **zero client-side JS** for i18n.
     - Images with intrinsic dimensions → zero CLS.
     - **All CSS is inline;** this is intentional given the small number of pages and the tiny CSS footprint.
+    - Paths are **normalized** (single leading slash, no trailing slash).
 
 - **Deterministic i18n**
-    - Selection order: **`?lang=` (xx or xx-YY) → cookie → `Accept-Language` (q-aware) → default**.
+    - Selection order: **`?lang=` (xx or xx-YY) → cookie → `Accept-Language` (q-aware, tie-broken by order) → default**.
     - `?lang=` normalized to base (`xx`) and lowercased; param is stripped.
+      If `?lang` is invalid/unknown, it is **stripped with a cacheable 308**.
     - **Cookie is only set when user choice differs from browser preference**.
       If the browser already prefers that locale, cookie is cleared.
-    - Bots are never forced into cookies or redirects.
+    - Bots are not personalized.
+        - Canonicalization applies (308 from default-locale prefix).
+        - **Invalid `?lang` is not normalized for bots** (param passes through).
+
     - **Default locale has no URL prefix**; `/default/...` is **308** to the canonical prefix-less path (long-cache).
     - Admin area (`/admin` or coming from it) bypasses i18n logic.
 
@@ -43,6 +48,7 @@ Fully static **Astro** site served from the CDN. Language is resolved **at the e
 
 - **Bots vs. Humans**
     - Bots get canonical content without user-bound redirects; humans may get 307s for locale alignment.
+    - Bots are not normalized on `?lang`; only the default-locale prefix is canonicalized.
 
 - **Safety**
     - Locale cookie is `SameSite=Lax`, `Secure` on HTTPS, **not** `HttpOnly` by design.
@@ -50,6 +56,7 @@ Fully static **Astro** site served from the CDN. Language is resolved **at the e
 
 - **Unknown/invalid inputs**
     - Malformed cookies are ignored; unknown locales fall back to default.
+    - Invalid `?lang` params are stripped with a **308**.
 
 - **Integrity**
     - Query preserved (except a **valid** `lang`); hash preserved.
@@ -61,16 +68,18 @@ Fully static **Astro** site served from the CDN. Language is resolved **at the e
 | Path has prefix          | `?lang=` present     | Cookie locale       | Browser preference | Actor | Action                                                                                    |
 | ------------------------ | -------------------- | ------------------- | ------------------ | ----- | ----------------------------------------------------------------------------------------- |
 | any                      | valid (`xx`/`xx-YY`) | any                 | any                | human | Normalize `xx`; set cookie only if browser differs; clear otherwise; **307** to clean URL |
-| any                      | valid                | any                 | any                | bot   | Strip `lang` if path changes; **no forced cookie**                                        |
+| any                      | invalid              | any                 | any                | human | Strip `?lang` and **308** to clean URL (cacheable)                                        |
+| any                      | valid                | any                 | any                | bot   | Pass through (no normalization); **no cookie**                                            |
 | **yes** (`/xx/...`)      | —                    | differs from prefix | —                  | human | **307** to cookie’s `/cookie-xx/...`                                                      |
 | **yes** (`/default/...`) | —                    | any                 | —                  | any   | **308** to prefix-less canonical (cacheable)                                              |
 | **yes** (`/xx/...`)      | —                    | same or none        | —                  | any   | Pass through                                                                              |
-| **no**                   | —                    | none                | non-default        | human | **308** to `/{xx}{path}` (cacheable, depends only on Accept-Language)                     |
+| **no**                   | —                    | none                | non-default        | human | **308** to `/{xx}{path}` (cacheable, depends only on Accept-Language, order tie-break)    |
 | **no**                   | —                    | cookie present      | —                  | human | **307** to `/{cookie}{path}` (user-bound, not cacheable)                                  |
 | **no**                   | —                    | —                   | default            | any   | Serve prefix-less                                                                         |
 
-> All user-bound redirects use `Cache-Control: private, no-store` and `Vary: Accept-Language, Cookie`.
-> Canonical and Accept-Language-based 308s are cacheable (`s-maxage=31536000, max-age=31536000, immutable`).
+> All user-bound redirects use `Cache-Control: private, no-store`.
+> **Accept-Language**-based **308**: `Cache-Control: public, s-maxage=31536000, max-age=31536000, immutable` **and** `Vary: Accept-Language`.
+> **Canonical** **308** (`/<default>/...` → `/...`): `Cache-Control: public, s-maxage=31536000, max-age=31536000, immutable`.
 
 ---
 
@@ -87,7 +96,7 @@ Fully static **Astro** site served from the CDN. Language is resolved **at the e
 
 - Middleware imports `I18N`, lowercases once, and validates against a `Set` for O(1) checks.
 
-- To **add a locale**: (1) add to `i18n.js`, (2) create localized content & manifests, (3) wire `hreflang` alternates & sitemap entries.
+- To **add a locale**: (1) add to `i18n.js`, (2) create localized content.
 
 ---
 
