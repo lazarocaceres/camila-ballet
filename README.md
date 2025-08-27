@@ -17,7 +17,9 @@ Fully static **Astro** site served from the CDN. Language is resolved **at the e
 - **Deterministic i18n**
     - Selection order: **`?lang=` (xx or xx-YY) → cookie → `Accept-Language` (q-aware) → default**.
     - `?lang=` normalized to base (`xx`) and lowercased; param is stripped.
-    - **Sticky cookie** for humans via 307; bots aren’t forced just to set cookies.
+    - **Cookie is only set when user choice differs from browser preference**.
+      If the browser already prefers that locale, cookie is cleared.
+    - Bots are never forced into cookies or redirects.
     - **Default locale has no URL prefix**; `/default/...` is **308** to the canonical prefix-less path (long-cache).
     - Admin area (`/admin` or coming from it) bypasses i18n logic.
 
@@ -44,6 +46,7 @@ Fully static **Astro** site served from the CDN. Language is resolved **at the e
 
 - **Safety**
     - Locale cookie is `SameSite=Lax`, `Secure` on HTTPS, **not** `HttpOnly` by design.
+    - Cookie may not be present if user’s choice matches browser preference (no need to persist).
 
 - **Unknown/invalid inputs**
     - Malformed cookies are ignored; unknown locales fall back to default.
@@ -55,17 +58,19 @@ Fully static **Astro** site served from the CDN. Language is resolved **at the e
 
 ## 🔄 Redirect Decision Matrix
 
-| Path has prefix          | `?lang=` present     | Cookie locale                                  | User-Agent     | Action                                                                 |
-| ------------------------ | -------------------- | ---------------------------------------------- | -------------- | ---------------------------------------------------------------------- |
-| any                      | valid (`xx`/`xx-YY`) | any                                            | human          | Normalize `xx`, set cookie if needed, **307** to clean URL (no `lang`) |
-| any                      | valid                | any                                            | bot            | Strip `lang` if path changes; **no forced cookie set**                 |
-| **yes** (`/xx/...`)      | —                    | differs from cookie                            | human          | **307** to cookie’s `/cookie-xx/...`                                   |
-| **yes** (`/default/...`) | —                    | any                                            | any            | **308** to prefix-less canonical                                       |
-| **yes** (`/xx/...`)      | —                    | same or none                                   | any            | Pass through                                                           |
-| **no**                   | —                    | cookie or Accept-Language suggests non-default | human          | **307** to `/{xx}{path}`                                               |
-| **no**                   | —                    | —                                              | bot or default | Serve prefix-less                                                      |
+| Path has prefix          | `?lang=` present     | Cookie locale       | Browser preference | Actor | Action                                                                                    |
+| ------------------------ | -------------------- | ------------------- | ------------------ | ----- | ----------------------------------------------------------------------------------------- |
+| any                      | valid (`xx`/`xx-YY`) | any                 | any                | human | Normalize `xx`; set cookie only if browser differs; clear otherwise; **307** to clean URL |
+| any                      | valid                | any                 | any                | bot   | Strip `lang` if path changes; **no forced cookie**                                        |
+| **yes** (`/xx/...`)      | —                    | differs from prefix | —                  | human | **307** to cookie’s `/cookie-xx/...`                                                      |
+| **yes** (`/default/...`) | —                    | any                 | —                  | any   | **308** to prefix-less canonical (cacheable)                                              |
+| **yes** (`/xx/...`)      | —                    | same or none        | —                  | any   | Pass through                                                                              |
+| **no**                   | —                    | none                | non-default        | human | **308** to `/{xx}{path}` (cacheable, depends only on Accept-Language)                     |
+| **no**                   | —                    | cookie present      | —                  | human | **307** to `/{cookie}{path}` (user-bound, not cacheable)                                  |
+| **no**                   | —                    | —                   | default            | any   | Serve prefix-less                                                                         |
 
-> All user-bound redirects use `Cache-Control: private, no-store` and `Vary: Accept-Language, Cookie`. Canonical 308s are cacheable (`s-maxage=31536000, max-age=31536000, immutable`).
+> All user-bound redirects use `Cache-Control: private, no-store` and `Vary: Accept-Language, Cookie`.
+> Canonical and Accept-Language-based 308s are cacheable (`s-maxage=31536000, max-age=31536000, immutable`).
 
 ---
 
@@ -81,6 +86,7 @@ Fully static **Astro** site served from the CDN. Language is resolved **at the e
     ```
 
 - Middleware imports `I18N`, lowercases once, and validates against a `Set` for O(1) checks.
+
 - To **add a locale**: (1) add to `i18n.js`, (2) create localized content & manifests, (3) wire `hreflang` alternates & sitemap entries.
 
 ---
@@ -95,7 +101,10 @@ Fully static **Astro** site served from the CDN. Language is resolved **at the e
 
 ## 🚀 Caching
 
-- **HTML:** controlled by CDN; canonical 308s are **heavily cacheable**.
+- **HTML:** controlled by CDN.
+    - User-bound 307s are `private, no-store`.
+    - Canonical 308s and Accept-Language-based 308s are **heavily cacheable**.
+
 - **Assets:** `Cache-Control: public, max-age=31536000, immutable`.
 
 ---
@@ -118,7 +127,8 @@ Dashboards: **set up** dashboards to monitor redirect rates by path/locale and t
 ## 🧭 Non-Goals / Trade-offs
 
 - No runtime SSR for content (keeps infra simple and fast).
-- Cookie is readable client-side for UX (by design); if this becomes a concern, gate reads per page.
+- Cookie is readable client-side for UX (by design).
+- We intentionally avoid persisting a cookie when the user’s explicit choice already matches their browser preference, to reduce unnecessary state.
 
 ---
 

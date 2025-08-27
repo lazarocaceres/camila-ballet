@@ -259,7 +259,7 @@ export default function middleware(request) {
         const loc = withLocaleClean(path, targetLocale) + searchStr + hashStr
 
         if (!hasCookieLocale) {
-            // First-time visitor: redirect is deterministic → cacheable
+            // No cookie → redirect based only on Accept-Language (cacheable)
             return respondRedirectStatic(308, loc, 31536000)
         }
 
