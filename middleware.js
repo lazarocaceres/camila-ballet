@@ -5,40 +5,32 @@ const COOKIE = 'locale'
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 const LANG_PARAM = 'lang'
 
-// Lowercase once; Set gives O(1) membership checks in hot paths.
 const LOCALES = new Set(I18N.locales.map(s => s.toLowerCase()))
 const DEFAULT = I18N.defaultLocale.toLowerCase()
 
-// Non-capturing group; wide but deliberate bot list.
-// Keep UA checks cheap and avoid false positives.
 const RE_BOT =
     /(?:Googlebot|Google-InspectionTool|AdsBot-Google|AdsBot-Google-Mobile|AdsBot-Google-Mobile-Apps|Googlebot-Image|Googlebot-News|GoogleOther|GoogleReadAloud|Mediapartners-Google|APIs-Google|bingbot|BingPreview|DuckDuckBot|Baiduspider|YandexBot|YandexImages|Yandex|Applebot|SemrushBot|AhrefsBot|DotBot|MJ12bot|CCBot|PetalBot|Bytespider|Sogou|SogouSpider|Sogou web spider|SeznamBot|Qwantify|NaverBot|facebot|facebookexternalhit|FacebookBot|FacebookCatalog|Twitterbot|LinkedInBot|Slackbot|Discordbot|TelegramBot|Quora Link Preview|SkypeUriPreview|Embedly|rogerbot|SiteAuditBot|W3C_Validator|validator\.nu|Chrome-Lighthouse|Lighthouse|Page Speed|GTmetrix|Pingdom|Screaming Frog|GPTBot|ClaudeBot|PerplexityBot|YouBot|Amazonbot|HeadlessChrome|PhantomJS|curl|wget)/i
 
-// Precompiled cookie matcher; avoids repeated splitting/parsing.
 const RE_COOKIE = new RegExp('(?:^|;\\s*)' + COOKIE + '=([^;]*)')
 
 export const config = {
     runtime: 'edge',
-    // Avoid work for static assets early; matcher keeps this middleware on HTML-ish routes.
     matcher: [
         '/((?!api|_astro|assets|_image|\\.well-known|favicon\\.ico|robots\\.txt|sitemap\\.xml|.*\\.(?:png|jpe?g|webp|gif|svg|ico|css|js|mjs|map|woff2?|ttf|otf|eot|txt|xml|json|pdf|avif|heic|heif|mp4|webm|ogg|mp3|wav)).*)',
     ],
 }
 
-// Tiny helpers kept branchless where possible.
 const lc = s => (typeof s === 'string' ? s.toLowerCase() : '')
 
-// Normalize path to a single leading slash; avoids repeated regex work.
 const clean = p => {
     if (!p || p === '/') return '/'
     let a = 0,
         b = p.length - 1
-    while (a <= b && p.charCodeAt(a) === 47) a++ // '/'
-    while (b >= a && p.charCodeAt(b) === 47) b-- // '/'
+    while (a <= b && p.charCodeAt(a) === 47) a++
+    while (b >= a && p.charCodeAt(b) === 47) b--
     return a > b ? '/' : '/' + p.slice(a, b + 1)
 }
 
-// First clean segment without leading slash; hot path for locale prefix detection.
 const seg0Clean = c => {
     if (c === '/') return ''
     const n = c.indexOf('/', 1)
@@ -54,7 +46,6 @@ const withoutLocaleClean = cleanPath => {
     return n === -1 ? '/' : cleanPath.slice(n)
 }
 
-// Defensive decode to avoid malformed cookie throwing and aborting the request.
 const getCookie = cookieHeader => {
     if (!cookieHeader) return ''
     const m = RE_COOKIE.exec(cookieHeader)
@@ -66,11 +57,9 @@ const getCookie = cookieHeader => {
     }
 }
 
-// Keep cookie minimal: Lax + Secure (when HTTPS); no HttpOnly on purpose (potential client reads).
 const setCookie = (value, isHttps) =>
     `${COOKIE}=${encodeURIComponent(value)}; Path=/; Max-Age=${COOKIE_MAX_AGE}; SameSite=Lax${isHttps ? '; Secure' : ''}`
 
-// O(n) Accept-Language scan: respects q desc, then order of appearance; no sort/allocation churn.
 const bestFromAcceptLanguage = h => {
     if (!h) return ''
     const parts = h.split(',')
@@ -92,7 +81,6 @@ const bestFromAcceptLanguage = h => {
             continue
         }
 
-        // Default q=1; accept malformed values by treating as q=0.
         let q = 1
         for (let s = 1; s < semi.length; s++) {
             const p = semi[s].trim()
@@ -103,7 +91,6 @@ const bestFromAcceptLanguage = h => {
             }
         }
 
-        // Exact match wins; fallback to language base (xx-YY → xx) if present in LOCALES.
         if (LOCALES.has(lang)) {
             if (q > bestQ || (q === bestQ && i < bestIndex)) {
                 bestLang = lang
@@ -135,7 +122,6 @@ const pickBest = (cookieLocale, acceptHeader) => {
     return candidate || DEFAULT
 }
 
-// User-bound redirects: never cacheable; Vary ensures correct per-user behavior.
 const respondRedirectUser = (status, location, cookieValue, vary = true) => {
     const headers = { Location: location }
     if (cookieValue) headers['Set-Cookie'] = cookieValue
@@ -144,7 +130,6 @@ const respondRedirectUser = (status, location, cookieValue, vary = true) => {
     return new Response(null, { status, headers })
 }
 
-// Purely static redirects (locale default removal): cache hard in CDN/clients.
 const respondRedirectStatic = (status, location, cacheSeconds) => {
     const headers = { Location: location }
     headers['Cache-Control'] =
@@ -157,7 +142,6 @@ const passNext = () => next()
 export default function middleware(request) {
     const url = new URL(request.url)
 
-    // Detect HTTPS quickly; XFP may be a comma list behind proxies.
     const xfProto = request.headers.get('x-forwarded-proto')
     const isHttps =
         (xfProto
@@ -165,14 +149,11 @@ export default function middleware(request) {
             : url.protocol.replace(':', '')) === 'https'
 
     const path = clean(url.pathname)
-    // Bypass admin as early as possible.
     if (path === '/admin' || path.startsWith('/admin/')) return next()
 
-    // Avoid locale logic on admin referrers (post-login flows, etc.).
     const ref = request.headers.get('referer')
     if (ref && ref.indexOf('/admin') !== -1) return next()
 
-    // Precompute to avoid repeated string work.
     const searchStr = url.search || ''
     const hashStr = url.hash || ''
 
@@ -180,6 +161,10 @@ export default function middleware(request) {
     const cookieHeader = request.headers.get('cookie') || ''
     const acceptLang = request.headers.get('accept-language') || ''
     const isBot = RE_BOT.test(ua)
+
+    if (isBot) {
+        return passNext()
+    }
 
     const cookie = lc(getCookie(cookieHeader))
     const seg = lc(seg0Clean(path))
@@ -190,19 +175,9 @@ export default function middleware(request) {
     const chosen = rawChosen ? lc(rawChosen.split('-')[0]) : ''
     const hasChosen = !!chosen && LOCALES.has(chosen)
 
-    // FAST PATH: most common no-op cases.
-    // - No explicit ?lang=
-    // - No locale prefix in path
-    // - Either a bot (we don't redirect bots) OR cookie already equals DEFAULT
-    if (!rawChosen && !hasSegLocale && (isBot || cookie === DEFAULT)) {
-        return passNext()
-    }
-
-    // Explicit language param always wins.
     if (hasChosen) {
         url.searchParams.delete(LANG_PARAM)
         const cleanSearch = url.search || ''
-
         const targetPath = hasSegLocale
             ? seg === chosen
                 ? path
@@ -211,31 +186,12 @@ export default function middleware(request) {
               ? path
               : withLocaleClean(path, chosen)
 
-        if (targetPath !== path || cleanSearch !== searchStr) {
-            const loc = targetPath + cleanSearch + hashStr
-            const sc =
-                cookie !== chosen ? setCookie(chosen, isHttps) : undefined
-            return respondRedirectUser(307, loc, sc, true)
-        }
-        if (cookie !== chosen) {
-            if (!isBot) {
-                const loc = path + searchStr + hashStr
-                return respondRedirectUser(
-                    307,
-                    loc,
-                    setCookie(chosen, isHttps),
-                    true,
-                )
-            }
-            return passNext()
-        }
-        return passNext()
+        const loc = targetPath + cleanSearch + hashStr
+        return respondRedirectUser(307, loc, setCookie(chosen, isHttps), true)
     }
 
-    // Path already carries a locale prefix.
     if (hasSegLocale) {
-        // If cookie disagrees with prefix, align via user redirect (bots excluded).
-        if (!isBot && hasCookieLocale && cookie !== seg) {
+        if (hasCookieLocale && cookie !== seg) {
             const loc =
                 withLocaleClean(withoutLocaleClean(path), cookie) +
                 searchStr +
@@ -248,7 +204,6 @@ export default function middleware(request) {
             )
         }
 
-        // Canonicalize default-locale prefix by stripping it and caching the redirect.
         if (seg === DEFAULT) {
             const target = withoutLocaleClean(path) + searchStr + hashStr
             const current = url.pathname + (url.search || '') + hashStr
@@ -257,34 +212,20 @@ export default function middleware(request) {
             }
         }
 
-        // Ensure cookie is set to the prefix for humans; bots pass through.
-        if (!hasCookieLocale || cookie !== seg) {
-            if (!isBot) {
-                const loc = path + searchStr + hashStr
-                return respondRedirectUser(
-                    307,
-                    loc,
-                    setCookie(seg, isHttps),
-                    true,
-                )
-            }
-            return passNext()
-        }
         return passNext()
     }
 
-    // No prefix → choose best locale based on cookie or Accept-Language.
     const best = pickBest(cookie, acceptLang)
     const targetLocale = hasCookieLocale ? cookie : best
 
-    // Redirect humans into their non-default locale; default stays on bare path.
-    if (!isBot && targetLocale !== DEFAULT) {
+    if (targetLocale !== DEFAULT) {
         const loc = withLocaleClean(path, targetLocale) + searchStr + hashStr
-        const sc =
-            cookie !== targetLocale
-                ? setCookie(targetLocale, isHttps)
-                : undefined
-        return respondRedirectUser(307, loc, sc, true)
+
+        if (!hasCookieLocale) {
+            return respondRedirectStatic(308, loc, 31536000)
+        }
+
+        return respondRedirectUser(307, loc, undefined, true)
     }
 
     return passNext()
