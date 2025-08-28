@@ -9,24 +9,28 @@ Fully static **Astro** site served from the CDN. Language is resolved **at the e
 ## ✨ Highlights
 
 - **Performance**
-    - All pages pre-rendered; assets fingerprinted and long-cached.
+    - All pages **pre-rendered**; assets fingerprinted and long-cached.
     - Language resolved at the edge → no SSR and **zero client-side JS** for i18n.
-    - Images with intrinsic dimensions → zero CLS.
-    - **All CSS is inline;** this is intentional given the small number of pages and the tiny CSS footprint.
-    - Paths are **normalized** (single leading slash, no trailing slash).
+    - Images with intrinsic dimensions → **zero CLS**.
+    - All CSS is inline; this is intentional given the small number of pages and the tiny CSS footprint.
+    - Paths are normalized (single leading slash, no trailing slash).
 
 - **Deterministic i18n**
     - Selection order: **`?lang=` (xx or xx-YY) → cookie → `Accept-Language` (q-aware, tie-broken by order) → default**.
+
     - `?lang=` normalized to base (`xx`) and lowercased; param is stripped.
       If `?lang` is invalid/unknown, it is **stripped with a cacheable 308**.
+
     - **Cookie is only set when user choice differs from browser preference**.
       If the browser already prefers that locale, cookie is cleared.
+
     - Bots are not personalized.
         - Canonicalization applies (308 from default-locale prefix).
-        - **Invalid `?lang` is not normalized for bots** (param passes through).
+        - `?lang` (valid or invalid) is never normalized for bots — param passes through unchanged.
 
     - **Default locale has no URL prefix**; `/default/...` is **308** to the canonical prefix-less path (long-cache).
-    - Admin area (`/admin` or coming from it) bypasses i18n logic.
+
+    - Admin area (`/admin` paths or requests with `/admin` as referer) bypasses i18n logic.
 
 - **SEO-ready (automatic)**
     - Sitemaps include `hreflang` alternates plus `x-default` — **generated automatically**.
@@ -48,11 +52,11 @@ Fully static **Astro** site served from the CDN. Language is resolved **at the e
 
 - **Bots vs. Humans**
     - Bots get canonical content without user-bound redirects; humans may get 307s for locale alignment.
-    - Bots are not normalized on `?lang`; only the default-locale prefix is canonicalized.
+    - Bots are not redirected on `?lang`; only the default-locale prefix is canonicalized.
 
 - **Safety**
-    - Locale cookie is `SameSite=Lax`, `Secure` on HTTPS, **not** `HttpOnly` by design.
-    - Cookie may not be present if user’s choice matches browser preference (no need to persist).
+    - Locale cookie is `SameSite=Lax`, `Secure` on HTTPS, and `HttpOnly` (not readable from client JS).
+    - Cookie is deliberately omitted if redundant (user choice = browser best).
 
 - **Unknown/invalid inputs**
     - Malformed cookies are ignored; unknown locales fall back to default.
@@ -112,7 +116,8 @@ Fully static **Astro** site served from the CDN. Language is resolved **at the e
 
 - **HTML:** controlled by CDN.
     - User-bound 307s are `private, no-store`.
-    - Canonical 308s and Accept-Language-based 308s are **heavily cacheable**.
+    - Canonical 308s and Accept-Language-based 308s are **heavily cacheable** (`s-maxage=31536000, max-age=31536000, immutable`).
+    - Accept-Language-based 308s always include `Vary: Accept-Language`.
 
 - **Assets:** `Cache-Control: public, max-age=31536000, immutable`.
 
@@ -122,22 +127,22 @@ Fully static **Astro** site served from the CDN. Language is resolved **at the e
 
 Intended logging at the edge: `{ path, seg, cookie, accept, chosen, isBot, action, status, target }`.
 Actions: `pass`, `redirect307`, `redirect308`.
-Dashboards: **set up** dashboards to monitor redirect rates by path/locale and the bot/human split.
+Dashboards: monitor redirect rates by path/locale and the bot/human split.
 
 ---
 
 ## 🖊 Editorial Workflow (TinaCMS)
 
 - Visual edit → commit → CI → deploy. Previews honor the locale cookie.
-- The administration area resides under `/admin`; the middleware explicitly **bypasses** it (and requests/referrers originating from it) to ensure editors can select any locale within TinaCMS and preview the content in that language without i18n redirection interference.
+- The administration area resides under `/admin`; middleware bypasses it (by path or referer) so editors can select any locale in TinaCMS and preview content without interference.
 
 ---
 
 ## 🧭 Non-Goals / Trade-offs
 
 - No runtime SSR for content (keeps infra simple and fast).
-- Cookie is readable client-side for UX (by design).
-- We intentionally avoid persisting a cookie when the user’s explicit choice already matches their browser preference, to reduce unnecessary state.
+- Cookie is set with `HttpOnly` for security (not accessible from client JS).
+- Cookie deliberately not persisted when redundant with browser preference.
 
 ---
 
