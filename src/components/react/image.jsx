@@ -9,20 +9,24 @@ function isRemoteHttp(src) {
 function buildOptimizedUrl(src, w, quality) {
     return `/_vercel/image?url=${encodeURIComponent(src)}&w=${w}&q=${quality}`
 }
+function buildSrcSet(src, widths, q) {
+    return widths.map(w => `${buildOptimizedUrl(src, w, q)} ${w}w`).join(', ')
+}
 
 const BASE_WIDTHS = [
     32, 64, 96, 128, 160, 192, 256, 320, 480, 640, 960, 1280, 1600,
 ]
 const DEFAULT_MAX_W = 1920
+const DEFAULT_FILL_SIZES =
+    '(min-width:1536px) 1536px, (min-width:1280px) 1280px, (min-width:1024px) 1024px, (min-width:768px) 768px, (min-width:640px) 640px, 100vw'
 
 function getCandidates(minW, maxW) {
     return BASE_WIDTHS.filter(w => w >= minW && w <= maxW)
 }
 function pickSrcWidth(candidates, layoutW) {
-    for (let i = 0; i < candidates.length; i++) {
-        if (candidates[i] >= layoutW) return candidates[i]
-    }
-    return candidates[candidates.length - 1]
+    return (
+        candidates.find(w => w >= layoutW) ?? candidates[candidates.length - 1]
+    )
 }
 
 export default function Image(props) {
@@ -51,50 +55,41 @@ export default function Image(props) {
     }
 
     const canOpt = !isDev && isRemoteHttp(src) && !isVectorOrGif(src)
+    const decoding = priority ? 'auto' : 'async'
+    const loading = priority ? 'eager' : 'lazy'
+    const fetchPriority = priority ? 'high' : undefined
 
-    // ---------- FILL ----------
     if (fill) {
-        let ar = undefined
-        if (
+        const hasWH =
             Number.isFinite(width) &&
-            Number.isFinite(height) &&
             width > 0 &&
+            Number.isFinite(height) &&
             height > 0
-        ) {
-            ar = width / height
-        } else if (Number.isFinite(ratio) && ratio > 0) {
-            ar = ratio
-        }
-
-        if (!ar && isDev) {
+        const ar = hasWH
+            ? width / height
+            : Number.isFinite(ratio) && ratio > 0
+              ? ratio
+              : undefined
+        if (!ar && isDev)
             console.warn(
-                '[Image] <Image fill> sin width/height ni ratio. Añade width/height o ratio para evitar CLS y mejorar LCP.',
+                '[Image] <Image fill> without width/height or ratio. Add width/height or ratio to avoid CLS and improve LCP.',
             )
-        }
 
-        const intrinsicW =
-            Number.isFinite(width) && width > 0
-                ? Math.round(width)
-                : ar
-                  ? 1000
-                  : undefined
-        const intrinsicH =
-            Number.isFinite(height) && height > 0
-                ? Math.round(height)
-                : ar && intrinsicW
-                  ? Math.round(intrinsicW / ar)
-                  : undefined
+        const intrinsicW = hasWH ? Math.round(width) : ar ? 1000 : undefined
+        const intrinsicH = hasWH
+            ? Math.round(height)
+            : ar && intrinsicW
+              ? Math.round(intrinsicW / ar)
+              : undefined
 
         const candidates = getCandidates(minW, maxW)
         const src0 = canOpt
             ? buildOptimizedUrl(src, candidates[0], quality)
             : src
         const srcSet = canOpt
-            ? candidates
-                  .map(w => `${buildOptimizedUrl(src, w, quality)} ${w}w`)
-                  .join(', ')
+            ? buildSrcSet(src, candidates, quality)
             : undefined
-        const sizesAttr = sizes || '100vw'
+        const sizesAttr = sizes || DEFAULT_FILL_SIZES
 
         return (
             <span
@@ -111,9 +106,9 @@ export default function Image(props) {
                     srcSet={srcSet}
                     sizes={sizesAttr}
                     alt={alt}
-                    decoding={priority ? 'auto' : 'async'}
-                    loading={priority ? 'eager' : 'lazy'}
-                    fetchPriority={priority ? 'high' : undefined}
+                    decoding={decoding}
+                    loading={loading}
+                    fetchPriority={fetchPriority}
                     className={imgClassName}
                     width={intrinsicW}
                     height={intrinsicH}
@@ -130,14 +125,12 @@ export default function Image(props) {
         )
     }
 
-    // ---------- NON-FILL ----------
     let w = Number.isFinite(width) ? Math.round(width) : 0
     let h = Number.isFinite(height) ? Math.round(height) : undefined
-
     if (!w) {
         if (isDev)
             console.warn(
-                '[Image] En non-fill, "width" es obligatorio. Usando 800 por defecto.',
+                '[Image] In non-fill, "width" is required. Using 800 by default.',
             )
         w = 800
     }
@@ -147,13 +140,8 @@ export default function Image(props) {
     const srcW = candidates.length
         ? pickSrcWidth(candidates, w)
         : Math.min(w, maxW)
-
     const src1 = canOpt ? buildOptimizedUrl(src, srcW, quality) : src
-    const srcSet = canOpt
-        ? candidates
-              .map(W => `${buildOptimizedUrl(src, W, quality)} ${W}w`)
-              .join(', ')
-        : undefined
+    const srcSet = canOpt ? buildSrcSet(src, candidates, quality) : undefined
     const sizesAttr = sizes || `${w}px`
     const aspectStyle = w && h ? { aspectRatio: `${w}/${h}` } : undefined
 
@@ -165,9 +153,9 @@ export default function Image(props) {
             alt={alt}
             width={w}
             height={h}
-            decoding={priority ? 'auto' : 'async'}
-            loading={priority ? 'eager' : 'lazy'}
-            fetchPriority={priority ? 'high' : undefined}
+            decoding={decoding}
+            loading={loading}
+            fetchPriority={fetchPriority}
             className={imgClassName || className}
             style={{ ...aspectStyle }}
             {...rest}
