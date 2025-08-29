@@ -18,7 +18,7 @@ const BASE_WIDTHS = [
 ]
 const DEFAULT_MAX_W = 1920
 const DEFAULT_FILL_SIZES =
-    '(min-width:1536px) 1536px, (min-width:1280px) 1280px, (min-width:1024px) 1024px, (min-width:768px) 768px, (min-width:640px) 640px, 100vw'
+    '(min-width:1536px) 1536px, (min-width:1280px) 1280px, (min-width:1024px) 1024px, (min-width:768px) 768px, (min-width:640px) 640px, (min-width:480px) 480px, (min-width:360px) 360px, 100vw'
 
 function getCandidates(minW, maxW) {
     return BASE_WIDTHS.filter(w => w >= minW && w <= maxW)
