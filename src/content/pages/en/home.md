@@ -73,6 +73,14 @@ blocks:
             title: YAGP Final 2025. Junior Category. 12 years old
             description: >-
                 A sequence that immerses you in the atmosphere of the 2025 YAGP Junior Final.
+          - url: 'https://youtu.be/PQ10bbOlU0o'
+            title: Duo. International Dance Festival
+            description: >-
+                One of the winning performances at the International Dance Festival in Brazil 2025.
+          - url: 'https://youtu.be/7tC8zBzTU4E'
+            title: Soloist. International Dance Festival
+            description: >-
+                A glimpse into the stage of the International Dance Festival in Brazil 2025.
           - url: 'https://youtu.be/KfZF7NOjXdM'
             title: Duo Camila Rodríguez and Belén Díaz. Junior Category
             description: A glimpse into the heart of the 2025 YAGP Junior Final in Tampa.
