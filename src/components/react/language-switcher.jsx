@@ -67,11 +67,14 @@ export default function LanguageSwitcher({ locale, pathname: path }) {
                 }`}
             >
                 {languages.map(lang => (
-                    <a
+                    <button
                         key={lang.code}
-                        href={buildHref(lang.code)}
-                        onClick={() => setOpen(false)}
-                        className='w-full flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 focus:outline-none'
+                        type='button'
+                        onClick={() => {
+                            setOpen(false)
+                            window.location.href = buildHref(lang.code)
+                        }}
+                        className='w-full flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 focus:outline-none text-left cursor-pointer'
                     >
                         <Image
                             src={`/${lang.flagCode}.png`}
@@ -81,7 +84,7 @@ export default function LanguageSwitcher({ locale, pathname: path }) {
                         />
                         <span className='flex-1'>{lang.label}</span>
                         {lang.code === active.code && <Check />}
-                    </a>
+                    </button>
                 ))}
             </div>
         </div>
