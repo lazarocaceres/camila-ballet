@@ -11,26 +11,26 @@
         "format": "prettier --write ."
     },
     "dependencies": {
-        "@astrojs/mdx": "4.3.4",
-        "@astrojs/react": "4.3.0",
-        "@astrojs/vercel": "8.2.6",
-        "@tailwindcss/vite": "4.1.12",
+        "@astrojs/mdx": "4.3.6",
+        "@astrojs/react": "4.3.1",
+        "@astrojs/vercel": "8.2.8",
+        "@tailwindcss/vite": "4.1.13",
         "@tanstack/react-virtual": "3.13.12",
-        "@vercel/functions": "2.2.12",
+        "@vercel/functions": "3.1.0",
         "aos": "2.3.4",
-        "astro": "5.13.2",
+        "astro": "5.13.10",
         "lite-youtube-embed": "0.3.3",
         "react": "19.1.1",
         "react-dom": "19.1.1",
-        "tailwindcss": "4.1.12",
-        "terser": "5.43.1",
-        "tinacms": "2.8.2"
+        "tailwindcss": "4.1.13",
+        "terser": "5.44.0",
+        "tinacms": "2.8.3"
     },
     "devDependencies": {
-        "@tailwindcss/typography": "0.5.16",
-        "@tinacms/cli": "1.10.2",
-        "@types/node": "24.3.0",
+        "@tailwindcss/typography": "0.5.18",
+        "@tinacms/cli": "1.10.3",
+        "@types/node": "24.5.2",
         "prettier": "3.6.2"
     },
-    "packageManager": "pnpm@10.15.0"
+    "packageManager": "pnpm@10.17.1"
 }

@@ -40,6 +40,24 @@ export default function LanguageSwitcher({ locale, pathname: path }) {
         return `${base}?lang=${encodeURIComponent(code)}`
     }
 
+    const handleLanguage = (e, lang) => {
+        if (e.button === 2) return
+
+        setOpen(false)
+        const href = buildHref(lang.code)
+        const wantsNewTab = e.button === 1 || e.ctrlKey || e.metaKey
+
+        if (wantsNewTab) {
+            e.preventDefault()
+            window.open(href, '_blank', 'noopener,noreferrer')
+            return
+        }
+
+        if (lang.code !== active.code) {
+            window.location.href = href
+        }
+    }
+
     return (
         <div
             ref={ref}
@@ -70,10 +88,7 @@ export default function LanguageSwitcher({ locale, pathname: path }) {
                     <button
                         key={lang.code}
                         type='button'
-                        onClick={() => {
-                            setOpen(false)
-                            window.location.href = buildHref(lang.code)
-                        }}
+                        onMouseDown={e => handleLanguage(e, lang)}
                         className='w-full flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 focus:outline-none text-left cursor-pointer'
                     >
                         <Image
