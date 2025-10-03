@@ -37,25 +37,27 @@ export default function LanguageSwitcher({ locale, pathname: path }) {
     const buildHref = code => {
         const isDefault = code === i18n.defaultLocale
         const base = isDefault ? pathname || '/' : `/${code}${pathname || ''}`
-        return `${base}?lang=${encodeURIComponent(code)}`
+        return {
+            base,
+            withParam: `${base}?lang=${encodeURIComponent(code)}`,
+        }
     }
 
-    const handleLanguage = (e, lang) => {
-        if (e.button === 2) return
+    const handleLanguage = (e, lang, href) => {
+        e.preventDefault()
 
-        setOpen(false)
-        const href = buildHref(lang.code)
-        const wantsNewTab = e.button === 1 || e.ctrlKey || e.metaKey
-
+        const wantsNewTab = e.metaKey || e.ctrlKey || e.button === 1
         if (wantsNewTab) {
-            e.preventDefault()
             window.open(href, '_blank', 'noopener,noreferrer')
             return
         }
 
-        if (lang.code !== active.code) {
+        const isSameLang = lang.code === active.code
+        if (!isSameLang) {
             window.location.href = href
         }
+
+        setOpen(false)
     }
 
     return (
@@ -84,23 +86,28 @@ export default function LanguageSwitcher({ locale, pathname: path }) {
                         : 'opacity-0 translate-y-0.5 scale-95 pointer-events-none'
                 }`}
             >
-                {languages.map(lang => (
-                    <button
-                        key={lang.code}
-                        type='button'
-                        onMouseDown={e => handleLanguage(e, lang)}
-                        className='w-full flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 focus:outline-none text-left cursor-pointer'
-                    >
-                        <Image
-                            src={`/${lang.flagCode}.png`}
-                            alt=''
-                            width={24}
-                            className='w-6 h-6 rounded-sm'
-                        />
-                        <span className='flex-1'>{lang.label}</span>
-                        {lang.code === active.code && <Check />}
-                    </button>
-                ))}
+                {languages.map(lang => {
+                    const { base, withParam } = buildHref(lang.code)
+
+                    return (
+                        <a
+                            key={lang.code}
+                            href={base}
+                            onClick={e => handleLanguage(e, lang, withParam)}
+                            onAuxClick={e => handleLanguage(e, lang, withParam)}
+                            className='w-full flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 focus:outline-none text-left cursor-pointer'
+                        >
+                            <Image
+                                src={`/${lang.flagCode}.png`}
+                                alt=''
+                                width={24}
+                                className='w-6 h-6 rounded-sm'
+                            />
+                            <span className='flex-1'>{lang.label}</span>
+                            {lang.code === active.code && <Check />}
+                        </a>
+                    )
+                })}
             </div>
         </div>
     )
