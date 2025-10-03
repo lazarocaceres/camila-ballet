@@ -40,31 +40,36 @@ export default function LanguageSwitcher({ locale, pathname: path }) {
         return { base, withParam: `${base}?lang=${encodeURIComponent(code)}` }
     }
 
-    const handleMouseDown = (e, lang, href) => {
-        if (e.button === 2) return
-        e.preventDefault()
-
-        const wantsNewTab = e.metaKey || e.ctrlKey || e.button === 1
-        if (wantsNewTab) {
+    const navigateLanguage = (lang, href, newTab) => {
+        if (newTab) {
             window.open(href, '_blank', 'noopener,noreferrer')
         } else if (lang.code !== active.code) {
             window.location.href = href
         }
-
         setOpen(false)
+    }
+
+    const handlePointerDown = (e, lang, href) => {
+        if (e.button === 2) return
+        const newTab = e.metaKey || e.ctrlKey || e.button === 1
+        e.preventDefault()
+        navigateLanguage(lang, href, newTab)
+    }
+
+    const handleAuxClick = (e, lang, href) => {
+        e.preventDefault()
+        navigateLanguage(lang, href, true)
+    }
+
+    const handleClick = e => {
+        e.preventDefault()
     }
 
     const handleKeyDown = (e, lang, href) => {
         if (e.key !== 'Enter' && e.key !== ' ') return
         e.preventDefault()
-
-        if (e.metaKey || e.ctrlKey) {
-            window.open(href, '_blank', 'noopener,noreferrer')
-        } else if (lang.code !== active.code) {
-            window.location.href = href
-        }
-
-        setOpen(false)
+        const newTab = e.metaKey || e.ctrlKey
+        navigateLanguage(lang, href, newTab)
     }
 
     return (
@@ -99,10 +104,11 @@ export default function LanguageSwitcher({ locale, pathname: path }) {
                         <a
                             key={lang.code}
                             href={base}
-                            onMouseDown={e =>
-                                handleMouseDown(e, lang, withParam)
+                            onPointerDown={e =>
+                                handlePointerDown(e, lang, withParam)
                             }
-                            onClick={e => e.preventDefault()}
+                            onAuxClick={e => handleAuxClick(e, lang, withParam)}
+                            onClick={handleClick}
                             onKeyDown={e => handleKeyDown(e, lang, withParam)}
                             className='w-full flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 focus:outline-none text-left cursor-pointer'
                         >
